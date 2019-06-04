@@ -108,21 +108,20 @@ def flux_interpolate(num_flux,M_A):
 
     ## define the  flux for  each case ##
     Flux = Flux_minerva
-    E_nu_max = 20.
 
-    E_nu_Flux = linspace(0.,E_nu_max,len(Flux))
+    E_nu_Flux = linspace(0.,20.,len(Flux))
     Func = interp1d(E_nu_Flux,Flux,kind='cubic')
-    E_nu_new = linspace(0.,E_nu_max,num_flux)
+    E_nu_new = linspace(0.,20.,num_flux)
     Flux_new = Func(E_nu_new)
 
     Total_Flux = 0
     for i in range(len(Flux_new)):
-        Total_Flux = Total_Flux + E_nu_max/num_flux*(Flux_new[i])
+        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
 
     ## Define the weight functions needed to integrate over the flux ##
     weight = []
     for i in range(len(Flux_new)):
-        weight.append( (E_nu_max/num_flux)*Flux_new[i]/Total_Flux)
+        weight.append( (20./num_flux)*Flux_new[i]/Total_Flux)
 
     ## define the kinematic inputs for each case ##
 
@@ -167,11 +166,6 @@ def flux_interpolate(num_flux,M_A):
             b[i][j] = B+1
 
     b = where( b == num_flux, num_flux-1, b)
-
-
-    #for i in range(len(p_T_1D)):
-    #    for j in range(len(p_P_1D)):
-    #        print ( "(%s,%s)" % (a[i][j],b[i][j]))
 
     ## Find new ranges of flux for each combo of p_T and p_|| ##
     even_newer_E_nu = empty([len(p_P_1D),len(p_T_1D),num_flux])
