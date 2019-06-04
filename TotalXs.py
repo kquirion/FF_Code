@@ -5,22 +5,19 @@ import os
 import psutil
 import time
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D 
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from numpy import array,logspace,longdouble,log,log10
 from XSFunctions import *
 import datetime
 from math import log
 
-start_time = time.time()   
-print(datetime.datetime.now())         
-    
-    
-#############################################################################################################
+start_time = time.time()
+print(datetime.datetime.now())
+
 #############################################################################################################
 #############################################################################################################
 
-        
 Miniboone_XData = array([.425,.475,.525,.575,.625,.675,.725,.775,.85,.95,1.05,1.2,1.4,1.75])
 Miniboone_XS = array([7.985,8.261,8.809,9.530,10.13,10.71,11.11,11.55,12.02,12.30,12.58,12.58,12.78,12.36])*10**(-39)
 Miniboone_Error = array([1.997,1.532,1.330,1.209,1.24,1.089,1.065,1.078,1.129,1.217,1.359,1.662,2.116,2.613])*10**(-39)
@@ -51,12 +48,12 @@ new_E_nu = logspace(E_low,E_high,num_SIGMA)
 #for i in range(num_SIGMA):
 #    SIGMA_TEMP,new_E_nu_temp,M_A = make_total_xs_2(100,2000,new_E_nu[i],5)
 #    SIGMA[i] = SIGMA_TEMP
-    
+
 ## Make Neutrino Cross Section ##
 #for i in range(num_SIGMA):
 SIGMA = make_total_xs_dipole(new_E_nu,1.35)
 print("--- %s Minutes Until Finishing First Cross Section" % ((time.time() - start_time)/60.0))
-SIGMA_2 = make_total_xs_dipole(new_E_nu,1.03)
+SIGMA_2 = make_total_xs_dipole(new_E_nu,1.0)
 print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - start_time)/60.0))
     #A_SIGMA[i] = A_SIGMA_TEMP
 #print(SIGMA)
@@ -64,11 +61,11 @@ print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - st
 for j in range(100):
     for i in range(num_SIGMA):
         if((new_E_nu[i] > 5.0) & (SIGMA[i] > SIGMA[i-1])):
-            SIGMA[i] = SIGMA[i-1]  
+            SIGMA[i] = SIGMA[i-1]
 for j in range(100):
     for i in range(num_SIGMA):
         if((new_E_nu[i] > 5.0) & (SIGMA_2[i] > SIGMA_2[i-1])):
-            SIGMA_2[i] = SIGMA_2[i-1]  
+            SIGMA_2[i] = SIGMA_2[i-1]
 
 Func = interp1d(new_E_nu,SIGMA,kind='cubic')
 Func_2 = interp1d(new_E_nu,SIGMA_2,kind='cubic')
@@ -77,14 +74,14 @@ SIGMA_new = Func(newer_E_nu)
 SIGMA_new_2 = Func_2(newer_E_nu)
 
 #print(SIGMA)
-#print(new_E_nu)  
-    
+#print(new_E_nu)
+
 
 ## Set up the plot to be added to at each iteration ##
-#fig_SIGMA = plt.figure()    
+#fig_SIGMA = plt.figure()
 #SIGMA_graph = fig_SIGMA.gca()
-#SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)') 
-#SIGMA_graph.set_ylabel(r'$\sigma$ ($cm^2$)')     
+#SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
+#SIGMA_graph.set_ylabel(r'$\sigma$ ($cm^2$)')
 #SIGMA_graph.semilogx(new_E_nu,SIGMA,linestyle='-',linewidth=2,color='green',label='BW Form Factor')
 #SIGMA_graph.scatter(E_nu_MiniBooNE,MiniBooNE_Total,marker='s',color='black',label='MiniBooNE Data')
 #SIGMA_graph.errorbar(E_nu_MiniBooNE,MiniBooNE_Total,yerr=MiniBooNE_Error,color='black',fmt='o')
@@ -95,28 +92,28 @@ SIGMA_new_2 = Func_2(newer_E_nu)
 #SIGMA_graph.set_title(r'Neutrino Total Cross Section $^{12}C$')
 #SIGMA_graph.legend(loc=4)
 
-fig_SIGMA_BAR = plt.figure()    
+fig_SIGMA_BAR = plt.figure()
 SIGMA_graph_BAR = fig_SIGMA_BAR.gca()
-SIGMA_graph_BAR.set_xlabel(r'$E_{\nu}$ ($GeV$)') 
-SIGMA_graph_BAR.set_ylabel(r'$\sigma$ ($cm^2$)') 
-SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='red',label='MA = 1.35 GeV')
-SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_2,linestyle='-',linewidth=2,color='green',label='MA = 1.03 GeV')
+SIGMA_graph_BAR.set_xlabel(r'$E_{\nu}$ ($GeV$)')
+SIGMA_graph_BAR.set_ylabel(r'$\sigma$ ($cm^2$)')
+SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='red',label='Single Pole: MA = 1.35 GeV')
+SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_2,linestyle='-',linewidth=2,color='green',label='Single Pole: MA = 1.0 GeV')
 SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
 SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
 SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
 #SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,color='black',fmt='o',label='Minerva Neutrino')
 SIGMA_graph_BAR.legend(loc=(0.05,0.65))
-SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section $\theta < 20$ degrees')
+SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section')
 SIGMA_graph_BAR.set_xlim(0.1,20.0)
 SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
 
 ## Saves total cross section to Total_Cross_Section_Table.xlsx ##
-#writer=pandas.ExcelWriter('Total_Carbon_Cross_Section_Table.xlsx') 
+#writer=pandas.ExcelWriter('Total_Carbon_Cross_Section_Table.xlsx')
 #Table_4 = DataFrame({'E_nu':new_E_nu, 'CS M_A = 1.03':SIGMA, 'CS M_A = 1.35':SIGMA_2,'CS M_A = M_A(Q^2)':SIGMA_Varied,'CS M_A = 1.03':SIGMA_BAR, 'nu_bar CS M_A = 1.35':SIGMA_BAR_2,'nu_bar CS M_A = M_A(Q^2)':SIGMA_BAR_Varied})
-#Table_4.to_excel(writer, sheet_name = 'Total Cross Sections', index='False') 
+#Table_4.to_excel(writer, sheet_name = 'Total Cross Sections', index='False')
 #writer.save()
 
-          
-plt.show() 
+
+plt.show()
 print("--- %s Minutes Until Finish" % ((time.time() - start_time)/60.0))
-fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/TOTAL_XS_ANGLE_CUT.pdf" )
+fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/TOTAL_XS_SINGLE_POLE.pdf" )
