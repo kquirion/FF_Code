@@ -82,10 +82,10 @@ def weight_sum_2d(vector,weight):
 
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def flux_interpolate(num_flux,M_A):
+def flux_interpolate(M_A):
 
     m_mu = .1057
-
+    num_flux = 500
     Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
         .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
     Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
@@ -475,14 +475,14 @@ def make_form_factors_dipole(Q2,M_A):
     ## Create the form factors as a function of Q^2 = -q^2 ##
     F_1 = (GEV + (Q2/(4.*M**2)*GMV))/(1. + Q2/(4.*sq(M)))
     F_2 = (GMV - GEV)/((1. + Q2/(4.*M**2)))
-    F_A = g_A / (1. + Q2/sq(M_A))
+    F_A = g_A / sq(1. + Q2/sq(M_A))
     #F_P = 2.0*sq(m_N)*F_A/(M_pi**2 + Q2)
     F_P = 2.*sq(m_N)/(-Q2)*(g_A/(1+Q2/sq(M_pi)) - F_A)       # from 1972 paper
 
     return F_1,F_2,F_A,F_P,M_A
 
 ## Create the W elements which are used for the double differential cross sextion ##
-def make_double_diff_miniboone((T_mu,cos_mu,E_nu),M_A):
+def make_double_diff_miniboone(M_A):
     ## parameters ##
     A = 12                                                  # number of Nucleons
     m_N = 0.9389                                            # mass of the Nucleon
@@ -517,7 +517,7 @@ def make_double_diff_miniboone((T_mu,cos_mu,E_nu),M_A):
     E_nu = linspace(0., 3.,len(Flux),endpoint=True)
     Func = interp1d(E_nu,Flux,kind='cubic')
 
-    num_flux = 10000
+    num_flux = 500
     E_nu_new = linspace(0.001,3.,num_flux,endpoint=True)
     Flux_new = Func(E_nu_new)
 
@@ -573,7 +573,7 @@ def make_double_diff_miniboone((T_mu,cos_mu,E_nu),M_A):
 
 
     double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu_new+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
-    double_diff = weight_sum_3d(double_diff.real,weight).ravel()
+    double_diff = weight_sum_3d(double_diff.real,weight)
 
     return double_diff
 

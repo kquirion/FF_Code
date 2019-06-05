@@ -57,7 +57,7 @@ SIGMA_2 = make_total_xs_dipole(new_E_nu,1.0)
 print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - start_time)/60.0))
 SIGMA_3 = make_total_xs_dipole(new_E_nu,0.9)
 print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - start_time)/60.0))
- 
+
 
 for j in range(100):
     for i in range(num_SIGMA):
