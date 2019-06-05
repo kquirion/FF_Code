@@ -142,7 +142,7 @@ def flux_interpolate(num_flux,M_A):
     ######################################################
     ## make double diff from fit to total cross section ##
     ######################################################
-    double_diff,M_A = make_double_diff_dipole(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,num_nucs,M_A,1)
+    double_diff,M_A = make_double_diff_dipole(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,1)
 
     #######################################################################
     ## find the bounds on the indices where the cross section is nonzero ##
@@ -185,8 +185,8 @@ def flux_interpolate(num_flux,M_A):
             for k in range(num_flux):
                 new_weights[i][j][k] = ((temp_max-temp_min)/num_flux)*(newer_flux_new[i][j][k]/Total_Flux)
 
-    double_diff,M_A = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,num_nucs,M_A,1)
-    double_diff = weight_sum_3d(double_diff.real,new_weights)/num_neuts
+    double_diff,M_A = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,M_A,1)
+    double_diff = weight_sum_3d(double_diff.real,new_weights)/6.
     double_diff  = double_diff*Jac
 
     double_diff = double_diff.ravel()

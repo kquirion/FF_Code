@@ -63,9 +63,9 @@ for j in range(100):
         if((new_E_nu[i] > 5.0) & (SIGMA[i] > SIGMA[i-1])):
             SIGMA[i] = SIGMA[i-1]  
 
-Func = interp1d(new_E_nu,SIGMA,kind='cubic')
-newer_E_nu = logspace(E_low,E_high,200)
-SIGMA_new = Func(newer_E_nu)    
+#Func = interp1d(new_E_nu,SIGMA,kind='cubic')
+#newer_E_nu = logspace(E_low,E_high,200)
+#SIGMA_new = Func(newer_E_nu)    
 
 ## Set up the plot to be added to at each iteration ##
 #fig_SIGMA = plt.figure()    
@@ -82,19 +82,19 @@ SIGMA_new = Func(newer_E_nu)
 #SIGMA_graph.set_title(r'Neutrino Total Cross Section $^{12}C$')
 #SIGMA_graph.legend(loc=4)
 
-fig_SIGMA_BAR = plt.figure()    
-SIGMA_graph_BAR = fig_SIGMA_BAR.gca()
-SIGMA_graph_BAR.set_xlabel(r'$E_{\nu}$ ($GeV$)') 
-SIGMA_graph_BAR.set_ylabel(r'$\sigma$ ($cm^2$)') 
-SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='red',label='MA = 1.35 GeV')
-SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
-SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
-SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
+#fig_SIGMA_BAR = plt.figure()    
+#SIGMA_graph_BAR = fig_SIGMA_BAR.gca()
+#SIGMA_graph_BAR.set_xlabel(r'$E_{\nu}$ ($GeV$)') 
+#SIGMA_graph_BAR.set_ylabel(r'$\sigma$ ($cm^2$)') 
+#SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='red',label='MA = 1.35 GeV')
+#SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
+#SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
+#SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
 #SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,color='black',fmt='o',label='Minerva Neutrino')
-SIGMA_graph_BAR.legend(loc=(0.05,0.65))
-SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section $\theta < 20$ degrees')
-SIGMA_graph_BAR.set_xlim(0.1,20.0)
-SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
+#SIGMA_graph_BAR.legend(loc=(0.05,0.65))
+#SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section')
+#SIGMA_graph_BAR.set_xlim(0.1,20.0)
+#SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
 
 ## Saves total cross section to Total_Cross_Section_Table.xlsx ##
 #writer=pandas.ExcelWriter('Total_Carbon_Cross_Section_Table.xlsx') 
@@ -103,5 +103,5 @@ SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
 #writer.save()
 
           
-plt.show() 
+#plt.show() 
 print("--- %s Minutes Until Finish" % ((time.time() - start_time)/60.0))

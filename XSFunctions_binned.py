@@ -2,7 +2,7 @@
 ## Here wehave the functions for checking how total cross section depends on the range of Q^2 being used ##
 
 from math import log10, floor
-from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10
+from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,vstack,hstack
 from math import pi
 from scipy.integrate import quad
 from sys import exit
@@ -70,7 +70,7 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     ## fill in the values for the 3-momentum of the Boson ##
     q = sqrt(Q2 + sq(w))
     ## calculate the a elements ##
-    a_1,a_2,a_3,a_4,a_5,a_6,a_7,E_lo,E_hi = make_a_elements(Q2,q,w,w_eff)
+    a_1,a_2,a_3,a_4,a_5,a_6,a_7 = make_a_elements(Q2,q,w,w_eff)
     ## calculate the form factors ##
     F_1,F_2,F_A,F_P,M_A = make_form_factors_dipole(Q2,M_A)
 
@@ -99,11 +99,6 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
 ###################################
 def make_total_xs_binned(E_nu,M_A):
 
-    m_mu = 0.1057
-    E_nu_array = E_nu
-    N = len(E_nu_array)
-    num_Q2  = 30
-
     Miniboone_XData = array([.425,.475,.525,.575,.625,.675,.725,.775,.85,.95,1.05,1.2,1.4,1.75])
     Miniboone_XS = array([7.985,8.261,8.809,9.530,10.13,10.71,11.11,11.55,12.02,12.30,12.58,12.58,12.78,12.36])*10**(-39)
     Miniboone_Error = array([1.997,1.532,1.330,1.209,1.24,1.089,1.065,1.078,1.129,1.217,1.359,1.662,2.116,2.613])*10**(-39)
@@ -124,17 +119,24 @@ def make_total_xs_binned(E_nu,M_A):
     A_Miniboone_XS = array([1.808,1.89,2.019,2.258,2.501,2.728,2.932,3.091,3.372,3.815,4.254,4.789,5.784,7.086])*10**(-39)
     A_Miniboone_Error = array([6.267,4.471,4.433,4.384,4.335,4.559,4.39,4.56,4.821,5.663,6.704,9.831,17.42,31.26])*10**(-40)
 
+    m_mu = 0.1057
+    E_nu_array = E_nu
+    N = len(E_nu_array)
+    num_Q2  = 24
     N_cos_max = int(amax(E_nu_array)+1)*800
     N_T_max = 50+20*int(amax(E_nu_array))
     T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu = make_variables_unbinned(N_T_max,N_cos_max,E_nu_array[N-1])
     Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
-    bin_edges = logspace(-2.,log10(amax(Q2)),num_Q2+1)
-    print bin_edges
+    bin_edges = linspace(0.,8.,num_Q2+1)
+    E_low  = -1.
+    E_high = log10(20.)
 
-    SIGMA_TOT = zeros(N)
+    SIGMA_TOT = zeros(200)
+    y = []
+    y_labels = []
+    
     for k in range(num_Q2-6):
         SIGMA = zeros(N)
-
         for m  in range(N):
             print "Starting Calculation for E_nu = %s out of E_nu = %s" % (round_sig(E_nu_array[m]),round_sig(nanmax(E_nu_array)))
             N_cos = int(E_nu_array[m]+1)*800
@@ -175,28 +177,34 @@ def make_total_xs_binned(E_nu,M_A):
         ###############################################
         ## plot the contribution of  each Q^2  range ##
         ###############################################
-        fig_temp = plt.figure()
-        SIGMA_graph = fig_temp.gca()
-        SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
-        SIGMA_graph.set_ylabel(r'$\sigma$ ($cm^2$)')
-        SIGMA_graph.set_title(r'Neutrino $^{12}C$ Cross Section ')
-        SIGMA_graph.set_xlim(0.1,20.0)
-        SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
-
+        
+        Func = interp1d(E_nu_array,SIGMA,kind='cubic')
+        newer_E_nu = logspace(E_low,E_high,200)
+        SIGMA_new = Func(newer_E_nu)
+    
         #Func = interp1d(E_nu_array,SIGMA,kind='cubic')
         #newer_E_nu = logspace(-1.,log10(20.),100)
         #SIGMA_new = Func(newer_E_nu)
-
-        SIGMA_graph.semilogx(E_nu_array,SIGMA,linestyle='-',linewidth=2,color='red',label=r'%s $GeV^2$ -  %s  $GeV^2$' % (round_sig(bin_edges[k]),round_sig(bin_edges[k+1])))
-        SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
-        SIGMA_graph.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
-        SIGMA_graph.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
-        SIGMA_graph.legend()
-
-        fig_temp.savefig("Desktop/Research/Axial FF/FF PDFs/Q2 XS Contributions/%s GeV^2 - %s GeV^2.pdf" % (round_sig(bin_edges[k]),round_sig(bin_edges[k+1])))
-        fig_temp.clf()
-        SIGMA_graph.cla()
-
-        SIGMA_TOT  = SIGMA_TOT + SIGMA
-    print(SIGMA_TOT)
+        
+        SIGMA_TOT  = SIGMA_TOT + SIGMA_new
+        y.append(SIGMA_TOT)
+        y_labels.append("Q2 < %s GeV^2" % bin_edges[k+1])
+        
+    
+    fig = plt.figure()
+    SIGMA_graph = fig.gca()
+    SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
+    SIGMA_graph.set_ylabel(r'$\sigma$ ($cm^2$)')
+    SIGMA_graph.set_title(r'Neutrino $^{12}C$ Cross Section ')
+    SIGMA_graph.set_xlim(0.1,20.0)
+    SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
+        
+    SIGMA_graph.stackplot(newer_E_nu,y,linestyle='-',linewidth=2,labels=y_labels)
+    SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
+    SIGMA_graph.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
+    SIGMA_graph.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
+    SIGMA_graph.legend()
+    
+    fig.savefig("Desktop/Research/Axial FF/Plots/Q2 Conts 2./Q2_Stacks.pdf" )
+    
     return SIGMA_TOT
