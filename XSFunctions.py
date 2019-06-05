@@ -626,7 +626,7 @@ def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     else:
         print("Please Enter 1 for neutrino or 2 for antineutrino in the last argument of make_double_diff_dipole")
         exit()
-    #double_diff = where(Q2 > 1., 0., double_diff)
+    double_diff = where(Q2 > 4., 0., double_diff)
     return double_diff,M_A
 
 

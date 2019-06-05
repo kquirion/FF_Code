@@ -55,8 +55,9 @@ SIGMA = make_total_xs_dipole(new_E_nu,1.35)
 print("--- %s Minutes Until Finishing First Cross Section" % ((time.time() - start_time)/60.0))
 SIGMA_2 = make_total_xs_dipole(new_E_nu,1.0)
 print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - start_time)/60.0))
-    #A_SIGMA[i] = A_SIGMA_TEMP
-#print(SIGMA)
+SIGMA_3 = make_total_xs_dipole(new_E_nu,0.9)
+print("--- %s Minutes Until Finishing Second Cross Section" % ((time.time() - start_time)/60.0))
+ 
 
 for j in range(100):
     for i in range(num_SIGMA):
@@ -69,9 +70,11 @@ for j in range(100):
 
 Func = interp1d(new_E_nu,SIGMA,kind='cubic')
 Func_2 = interp1d(new_E_nu,SIGMA_2,kind='cubic')
+Func_3 = interp1d(new_E_nu,SIGMA_3,kind='cubic')
 newer_E_nu = logspace(E_low,E_high,200)
 SIGMA_new = Func(newer_E_nu)
 SIGMA_new_2 = Func_2(newer_E_nu)
+SIGMA_new_3 = Func_3(newer_E_nu)
 
 #print(SIGMA)
 #print(new_E_nu)
@@ -98,6 +101,7 @@ SIGMA_graph_BAR.set_xlabel(r'$E_{\nu}$ ($GeV$)')
 SIGMA_graph_BAR.set_ylabel(r'$\sigma$ ($cm^2$)')
 SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='red',label='Single Pole: MA = 1.35 GeV')
 SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_2,linestyle='-',linewidth=2,color='green',label='Single Pole: MA = 1.0 GeV')
+SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_3,linestyle='-',linewidth=2,color='cyan',label='Single Pole: MA = 0.9 GeV')
 SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
 SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
 SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
@@ -105,7 +109,7 @@ SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color=
 SIGMA_graph_BAR.legend(loc=(0.05,0.65))
 SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section')
 SIGMA_graph_BAR.set_xlim(0.1,20.0)
-SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
+SIGMA_graph_BAR.set_ylim(0.0,2.5*10**(-38))
 
 ## Saves total cross section to Total_Cross_Section_Table.xlsx ##
 #writer=pandas.ExcelWriter('Total_Carbon_Cross_Section_Table.xlsx')
