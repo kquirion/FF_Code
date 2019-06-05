@@ -113,11 +113,12 @@ Miniboone_Error = where(Miniboone_Error == 0, inf, Miniboone_Error)
 
 def miniboone_chisq(M_A):
     data = Miniboone_XS.ravel()
-    model = make_double_diff_miniboone(M_A)
+    model = make_double_diff_miniboone(M_A)*1.08
     model = model.ravel()
     err = Miniboone_Error.ravel()
     chisq_list = sq((data-model)/err)
     chisq_dof = sum(chisq_list)/len(data)
+    print chisq_dof
 
     return chisq_dof
 
@@ -128,13 +129,106 @@ def minerva_chisq(M_A):
     err = Minerva_Error.ravel()
     chisq_list = sq((data-model)/err)
     chisq_dof = sum(chisq_list)/len(data)
+    print chisq_dof
 
     return chisq_dof
 
+m_mu = .1057
 x0 = 1.
 
-res_miniboone = minimize(miniboone_chisq,x0)
-res_minerva = minimize(minerva_chisq,x0)
+res_miniboone = minimize(miniboone_chisq,x0,method='Nelder-Mead',tol=1e-6)
+res_minerva = minimize(minerva_chisq,x0,method='Nelder-Mead',tol=1e-6)
 
-print res_miniboone
-print res_minerva
+print res_miniboone.x
+print res_minerva.x
+
+## Lower edges of the bins ##
+p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
+## higher edges of the bins ##
+p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
+p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
+## middle of each bin ##
+p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
+p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
+
+## Miniboone Kinematic variables ##
+T_mu_1D = linspace(0.25,1.95,18,endpoint=True)
+cos_mu_1D = linspace(-.95,.95,20,endpoint=True)
+E_nu_1D = linspace(0.05, (60)/20.0,60,endpoint=True)
+T_mu,cos_mu,E_nu = meshgrid(T_mu_1D,cos_mu_1D,E_nu_1D,indexing='ij')
+
+double_diff_miniboone = make_double_diff_miniboone(res_miniboone.x[0])
+double_diff_minerva = flux_interpolate(res_minerva.x[0])
+
+print(" M_A_miniboone = %s" % res_miniboone.x[0])
+print(" M_A_minerva = %s" % res_minerva.x[0])
+
+M_A = 1.35
+M_A_minerva = res_minerva.x[0]
+M_A_miniboone = res_miniboone.x[0]
+if M_A == 1.35:
+    col = 'red'
+else:
+    col = 'green'
+
+E_nu_Flux = linspace(0.,20.,40,endpoint=True)
+E_nu_new = linspace(0.,20.,200,endpoint=True)
+
+
+## recreate the cross section with new E_nu values from interpolation ##
+
+p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
+cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
+T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
+Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
+
+p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1D,p_T_1D,E_nu_new,indexing = 'ij')
+T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
+cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
+E_mu_3D = T_mu_3D + m_mu
+P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
+
+#total_ddxs_calc = concatenate((double_diff_minerva.ravel(),double_diff_miniboone.ravel()))
+
+length_minerva  =  len(Minerva_ddxs_true.ravel())
+length_miniboone  =  len(Miniboone_XS.ravel())
+#length_total = len(total_ddxs_calc)
+
+minerva_chi_sq,minerva_tot_chi_sq =  calc_chi_squared(double_diff_minerva, Minerva_ddxs_true, Minerva_Error)
+print ('Minerva chi^2/(d.o.f.) =  %s'  %  round_sig(minerva_tot_chi_sq/length_minerva))
+
+miniboone_chi_sq,miniboone_tot_chi_sq =  calc_chi_squared(double_diff_miniboone, Miniboone_XS, Miniboone_Error)
+print ('MiniBooNE chi^2/(d.o.f.) =  %s'  %  round_sig(miniboone_tot_chi_sq/length_miniboone))
+
+#total_chi_sq,total_tot_chi_sq =  calc_chi_squared(total_ddxs_calc, total_ddxs, total_error)
+#print ('Combined chi^2/(d.o.f.) =  %s'  %  round_sig(total_tot_chi_sq/length_total))
+
+## Create the plot for the double differential cross section ##
+figax1 = plt.figure()
+figax2 = plt.figure()
+
+ax1 = figax1.gca(projection='3d')
+ax1.set_xlabel(r"$p_P$ (GeV)")
+ax1.set_ylabel('$p_T$ (GeV)')
+ax1.set_zlabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} $")
+ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
+
+ax2 = figax2.gca(projection='3d')
+ax2.set_xlabel(r"$T_{\mu}$ (GeV)")
+ax2.set_ylabel('$cos\theta_\mu$ ')
+ax2.set_zlabel(r"$\frac{d\sigma}{dT_\mu \, dcos\theta_\mu} $")
+ax2.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
+
+x,y = meshgrid(p_P_1D,p_T_1D,indexing='ij')
+ax1.scatter(x,y,double_diff_minerva,color=col,marker='s',label="RFG Model: M_A = %s GeV" % M_A_minerva)
+ax1.scatter(x,y,Minerva_ddxs_true,color='black',marker='s',label="Minerva Neutrino Data",depthshade=False)
+
+x2,y2 = meshgrid(T_mu_1D,cos_mu_1D,indexing='ij')
+ax2.scatter(x2,y2,double_diff_miniboone,color=col,marker='s',label="RFG Model: M_A = %s GeV" % M_A_miniboone)
+ax2.scatter(x2,y2,Miniboone_XS,color='black',marker='s',label="Miniboone Neutrino Data",depthshade=False)
+
+ax1.legend(loc=(0.52,0.65))
+ax2.legend(loc=(0.52,0.65))
+
+plt.show()

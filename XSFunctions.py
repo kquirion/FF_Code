@@ -1,6 +1,6 @@
 ## This file contains many functions for running cross section calculations ##
 from math import log10, floor
-from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10
+from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,cos
 from math import pi
 from scipy.integrate import quad
 from sys import exit
@@ -92,7 +92,6 @@ def flux_interpolate(M_A):
         .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
     Flux_minerva = Flux_FHC + Flux_RHC
 
-
     ## Lower edges of the bins ##
     p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
     p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
@@ -104,7 +103,6 @@ def flux_interpolate(M_A):
     ## middle of each bin ##
     p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
     p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
-
 
     ## define the  flux for  each case ##
     Flux = Flux_minerva
@@ -136,8 +134,7 @@ def flux_interpolate(M_A):
     E_mu_3D = T_mu_3D + m_mu
     P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
 
-
-    weight = broadcast_to(weight,(len(p_T_1D),len(p_P_1D),len(Flux_new)))
+    weight = broadcast_to(weight,(len(p_P_1D),len(p_T_1D),len(Flux_new)))
 
     ######################################################
     ## make double diff from fit to total cross section ##
@@ -148,48 +145,49 @@ def flux_interpolate(M_A):
     ## find the bounds on the indices where the cross section is nonzero ##
     #######################################################################
 
-    a = empty([len(p_P_1D),len(p_T_1D)], dtype=int)
-    b = empty([len(p_P_1D),len(p_T_1D)],dtype=int)
-    for i in range(len(p_P_1D)):
-        for j in range(len(p_T_1D)):
-            A = 0
-            B = num_flux-1
-            while double_diff[i][j][A] == 0.:
-                A += 1
-                if A ==  num_flux:
-                    break
-            while  double_diff[i][j][B] == 0. :
-                B -= 1
-                if B == 0:
-                    break
-            a[i][j] = A-1
-            b[i][j] = B+1
+    #a = empty([len(p_P_1D),len(p_T_1D)], dtype=int)
+    #b = empty([len(p_P_1D),len(p_T_1D)],dtype=int)
+    #for i in range(len(p_P_1D)):
+    #    for j in range(len(p_T_1D)):
+    #        A = 0
+    #        B = num_flux-1
+    #        while double_diff[i][j][A] == 0.:
+    #            A += 1
+    #            if A ==  num_flux:
+    #                break
+    #        while  double_diff[i][j][B] == 0. :
+    #            B -= 1
+    #            if B == 0:
+    #                break
+    #        a[i][j] = A-1
+    #        b[i][j] = B+1
 
-    b = where( b == num_flux, num_flux-1, b)
+    #b = where( b == num_flux, num_flux-1, b)
 
     ## Find new ranges of flux for each combo of p_T and p_|| ##
-    even_newer_E_nu = empty([len(p_P_1D),len(p_T_1D),num_flux])
-    for i in range(len(p_P_1D)):
-        for j in range(len(p_T_1D)):
-            temp_flux = linspace(E_nu_new[a[i][j]],E_nu_new[b[i][j]],num_flux)
-            for k in range(num_flux):
-                even_newer_E_nu[i][j][k] = temp_flux[k]
+    #even_newer_E_nu = empty([len(p_P_1D),len(p_T_1D),num_flux])
+    #for i in range(len(p_P_1D)):
+    #    for j in range(len(p_T_1D)):
+    #        temp_flux = linspace(E_nu_new[a[i][j]],E_nu_new[b[i][j]],num_flux)
+    #        for k in range(num_flux):
+    #            even_newer_E_nu[i][j][k] = temp_flux[k]
 
     ## Create new weight funcntions for each combo of p_T and p_|| ##
-    newer_flux_new = Func(even_newer_E_nu)
-    new_weights = empty([len(p_P_1D),len(p_T_1D),num_flux])
-    for i in range(len(p_P_1D)):
-        for j in range(len(p_T_1D)):
-            temp_max = amax(even_newer_E_nu[i][j])
-            temp_min = amin(even_newer_E_nu[i][j])
-            for k in range(num_flux):
-                new_weights[i][j][k] = ((temp_max-temp_min)/num_flux)*(newer_flux_new[i][j][k]/Total_Flux)
+    #newer_flux_new = Func(even_newer_E_nu)
+    #new_weights = empty([len(p_P_1D),len(p_T_1D),num_flux])
+    #for i in range(len(p_P_1D)):
+    #    for j in range(len(p_T_1D)):
+    #        temp_max = amax(even_newer_E_nu[i][j])
+    #        temp_min = amin(even_newer_E_nu[i][j])
+    #        for k in range(num_flux):
+    #            new_weights[i][j][k] = ((temp_max-temp_min)/num_flux)*(newer_flux_new[i][j][k]/Total_Flux)
 
-    double_diff,M_A = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,M_A,1)
-    double_diff = weight_sum_3d(double_diff.real,new_weights)/6.
+    #double_diff,M_A = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,M_A,1)
+    double_diff = weight_sum_3d(double_diff.real,weight)/12.
+    double_diff = where(cos_mu_2D < cos(20.*pi/180), 0., double_diff)
     double_diff  = double_diff*Jac
 
-    double_diff = double_diff.ravel()
+    double_diff = double_diff
 
     return double_diff
 
