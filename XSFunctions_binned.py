@@ -8,7 +8,9 @@ from scipy.integrate import quad
 from sys import exit
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-from XSFunctions import make_variables,sq,round_sig,make_a_elements,make_form_factors_dipole,calc_cross_section
+from XSFunctions import make_a_elements,make_form_factors_dipole,calc_cross_section
+from misc_fns import *
+from variable_fns import *
 
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
@@ -134,7 +136,7 @@ def make_total_xs_binned(E_nu,M_A):
     SIGMA_TOT = zeros(200)
     y = []
     y_labels = []
-    
+
     for k in range(num_Q2-6):
         SIGMA = zeros(N)
         for m  in range(N):
@@ -177,20 +179,20 @@ def make_total_xs_binned(E_nu,M_A):
         ###############################################
         ## plot the contribution of  each Q^2  range ##
         ###############################################
-        
+
         Func = interp1d(E_nu_array,SIGMA,kind='cubic')
         newer_E_nu = logspace(E_low,E_high,200)
         SIGMA_new = Func(newer_E_nu)
-    
+
         #Func = interp1d(E_nu_array,SIGMA,kind='cubic')
         #newer_E_nu = logspace(-1.,log10(20.),100)
         #SIGMA_new = Func(newer_E_nu)
-        
+
         SIGMA_TOT  = SIGMA_TOT + SIGMA_new
         y.append(SIGMA_TOT)
         y_labels.append("Q2 < %s GeV^2" % bin_edges[k+1])
-        
-    
+
+
     fig = plt.figure()
     SIGMA_graph = fig.gca()
     SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
@@ -198,13 +200,13 @@ def make_total_xs_binned(E_nu,M_A):
     SIGMA_graph.set_title(r'Neutrino $^{12}C$ Cross Section ')
     SIGMA_graph.set_xlim(0.1,20.0)
     SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
-        
+
     SIGMA_graph.stackplot(newer_E_nu,y,linestyle='-',linewidth=2,labels=y_labels)
     SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
     SIGMA_graph.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
     SIGMA_graph.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
     SIGMA_graph.legend()
-    
+
     fig.savefig("Desktop/Research/Axial FF/Plots/Q2 Conts 2./Q2_Stacks.pdf" )
-    
+
     return SIGMA_TOT

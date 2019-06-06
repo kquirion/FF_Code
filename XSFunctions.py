@@ -6,80 +6,8 @@ from scipy.integrate import quad
 from sys import exit
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-
-
-
-## Create the integrands for the b elements ##
-def Integrand_Zero(x,E_b,m_N,m_T,V,q):
-    return (m_T*V)/(2*pi*q)*(x)/(x-E_b)*(x/m_N)**0
-
-def Integrand_One(x,E_b,m_N,m_T,V,q):
-    return (m_T*V)/(2*pi*q)*(x)/(x-E_b)*(x/m_N)**1
-
-def Integrand_Two(x,E_b,m_N,m_T,V,q):
-    return (m_T*V)/(2*pi*q)*(x)/(x-E_b)*(x/m_N)**2
-
-###############################################################################
-## calculates the square of a number, or the element-wise square of an array ##
-###############################################################################
-def sq(A):
-    return A*conjugate(A)
-
-###############################################################################
-## Create a function for rounding to 4 significant figures (for readability) ##
-###############################################################################
-def round_sig(x, sig=4):
-   return round(x, sig-int(floor(log10(abs(x))))-1)
-
-############################################################################
-## make a function to convert 1D array into a 2D array of dimension (x,y) ##
-############################################################################
-def make2d(x,y,vector):
-    a = len(x)
-    b = len(y)
-    vector2 = array([[0.0 for j in range(b)] for i in range(a)])
-    for i in range(a):
-        for j in range(b):
-            vector2[i][j] = vector[i*b+j]
-    return vector2
-
-####################################################################
-## Create a function to calculate point-wise and total xi squared ##
-####################################################################
-def calc_chi_squared(Theo,Exp,Exp_err):
-    chi_squared_individual =  sq((Theo-Exp)/Exp_err)
-    chi_squared = sum(chi_squared_individual)
-    return chi_squared_individual,chi_squared
-
-##################################################################################
-## Create a function that performs a weighted sum over the last axis of 'vector'##
-##################################################################################
-def weight_sum_3d(vector,weight):
-    a = vector.shape
-    x = a[0]
-    y = a[1]
-    z = a[2]
-    output = array([[0.0 for i in range(y)] for j in range(x)])
-    for i in range(x):
-        for j in range(y):
-            Int = 0
-            for k in range(z-1):
-                Int = Int + 0.5*(weight[i][j][k]*vector[i][j][k] + weight[i][j][k+1]*vector[i][j][k+1])
-            output[i][j] = Int
-    return output
-
-def weight_sum_2d(vector,weight):
-    a = vector.shape
-    x = a[0]
-    y = a[1]
-    output = array([0.0 for i in range(x)])
-    for j in range(x):
-        Int = 0
-        for k in range(y-1):
-            Int = Int + 0.5*(weight[j][k]*vector[j][k] + weight[j][k+1]*vector[j][k+1] )
-        output[j] = Int
-    return output
-
+from misc_fns import *
+from variable_fns import *
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
 def flux_interpolate(M_A):
@@ -190,144 +118,6 @@ def flux_interpolate(M_A):
     double_diff = double_diff
 
     return double_diff
-
-########################################################################
-## Create a function to make the less constrained kinematic variables ##
-########################################################################
-def make_variables(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_min = 0.05
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    DELTA_T_mu = (T_mu_max-T_mu_min)/N_T
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
-    ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-    #cos_max = 20.*pi/180.
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = array([linspace(-cos_max,cos_max,2*N_cos,endpoint=False) for i in range(N_T)])
-
-    DELTA_cos_mu = array([0.0  for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(int(2*N_cos/100),N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(int(2*N_cos/100),N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(int(2*N_cos/100),N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
-
-    ########################################################################
-## Create a function to make the less constrained kinematic variables ##
-########################################################################
-def make_variables_unbinned(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_min = 0.05
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    DELTA_T_mu = (T_mu_max-T_mu_min)/N_T
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
-    ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-    #cos_max = 20.*pi/180.
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = array([linspace(-cos_max,cos_max,2*N_cos,endpoint=False) for i in range(N_T)])
-
-    DELTA_cos_mu = array([0.0  for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(2*N_cos,N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(2*N_cos,N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(2*N_cos,N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
-
-#######################################################
-## Create a function to make the kinematic variables ##
-#######################################################
-def make_variables_constrained(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
-
-    ## make the original cos_mu vector from [-1,1]
-    cos_mu = linspace(-1.0,1.0,2*N_cos)
-    cos_mu = broadcast_to(cos_mu,(N_T,2*N_cos))
-
-
-    ## 1D Create arrays for neutron momentum and energy ##
-    p_n = linspace(-p_F,p_F,N_T)
-    p_n = broadcast_to(p_n,(2*N_cos,N_T))
-    p_n = swapaxes(p_n,0,1)
-    E_n = sqrt(sq(p_n) + sq(m_N))
-
-    ## define quantities for solving the quadratic equation for T_mu ##
-    e = -2.0*(E_nu+E_n)*(E_nu*(E_n-m_mu-p_n)- m_mu*E_n + sq(m_mu)/2.)
-    a = sq(E_nu+E_n) - sq(cos_mu)*sq(E_nu+p_n)
-    b = e - 2.0*sq(cos_mu)*sq(E_nu+p_n)
-    c = sq(e)/(sq(E_nu+E_n))
-
-    cos_bounds = where(sq(b)-4.0*a*c > 0.0 , cos_mu,10)
-    cos_bound = nanmin(cos_bounds,axis=1)
-    cos_bound = where(cos_bound < 1.0, cos_bound, 1.0)
-
-    cos_mu = array([linspace(-cos_bound[i],cos_bound[i],2*N_cos,endpoint=False) for i in range(N_T)])
-
-    a = sq(E_nu+E_n) - sq(cos_mu)*sq(E_nu+p_n)
-    b = e - 2.0*sq(cos_mu)*sq(E_nu+p_n)
-    c = sq(e)/(sq(E_nu+E_n))
-    d = sq(b)-4.0*a*c
-    d = nanmax(d)
-
-    T_mu_max = abs(nanmax(1.0/(2.0*a)*(-b+sqrt(d))))
-    T_mu_min = abs(nanmin(1.0/(2.0*a)*(-b-sqrt(d))))
-    DELTA_T_mu = abs(T_mu_max-T_mu_min)/N_T
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
-    cos_max = E_mu/P_mu - sq(m_mu)/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0 ,cos_max,1.0)
-
-    for i in range(len(cos_bound)):
-        cos_max = where(cos_bound > cos_max, cos_bound, cos_max)
-
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = np.where((-0.24 < cos_mu) & (cos_mu < 0.24) , 0.25, cos_mu)
-
-    DELTA_cos_mu = array([0.0 for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(int(2*N_cos/500),N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(int(2*N_cos/500),N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(int(2*N_cos/500),N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
 
 ###########################
 ## Create the a elements ##
@@ -493,16 +283,11 @@ def make_double_diff_miniboone(M_A):
     POT = 5.58*10**(20)                                     # Integrated number of protons on target
 
     ## Create an array of the neutrino flux ##
-    Flux = array([45.4,171,222,267,332,364,389,
-        409,432,448,456,458,455,451,443,
-        431,416,398,379,358,335,312,288,
-        264,239,214,190,167,146,126,108,
-        92,78,65.7,55.2,46.2,38.6,32.3,
-        27.1,22.8,19.2,16.3,13.9,11.9,
-        10.3,8.96,7.87,7,6.3,5.73,5.23,
-        4.82,4.55,4.22,3.99,3.84,3.63,
+    Flux = array([45.4,171,222,267,332,364,389,409,432,448,456,458,455,451,443,
+        431,416,398,379,358,335,312,288,264,239,214,190,167,146,126,108,
+        92,78,65.7,55.2,46.2,38.6,32.3,27.1,22.8,19.2,16.3,13.9,11.9,
+        10.3,8.96,7.87,7,6.3,5.73,5.23,4.82,4.55,4.22,3.99,3.84,3.63,
         3.45,3.33,3.20])*10**(-12)
-
 
     T_mu_1d = linspace(0.25,1.95,18,endpoint=True)
     cos_mu_1d = linspace(-.95,.95,20,endpoint=True)
@@ -569,7 +354,6 @@ def make_double_diff_miniboone(M_A):
     W_4 = (sq(m_T)/sq(m_N))*(a_1*H_4 + m_N*(a_6*H_5)/q + (sq(m_N)/2.0)*((3.0*a_3 - a_2)*H_2)/sq(q))
     W_5 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_5 + m_T*(2.0*a_5 + (w/q)*(a_2 - 3.0*a_3))*(H_2/q)
 
-
     double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu_new+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
     double_diff = weight_sum_3d(double_diff.real,weight)
 
@@ -627,7 +411,6 @@ def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     double_diff = where(Q2 > 4., 0., double_diff)
     return double_diff,M_A
 
-
 ##################################################################################
 ## Calculate the total cross section by integrating over T_mu and cos_mu values ##
 ##################################################################################
@@ -658,8 +441,6 @@ def calc_cross_section(E_nu,N_T,N_cos,DELTA_cos_mu,DELTA_T_mu,double_diff):
     SIGMA = INT
 
     return SIGMA,new_E_nu
-
-
 
 ###################################
 ## function to do the dipole fit ##
@@ -711,7 +492,6 @@ def make_total_xs_dipole(E_nu,M_A):
     print(SIGMA)
     return SIGMA
 
-
 #################################
 ## make sdcs for fitting BW FF ##
 #################################
@@ -725,18 +505,12 @@ def make_single_diff(Q2_passed,N):
     GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
     M_A = 1.35
 
-
     ## Create an array of the neutrino flux ##
-    Flux = array([45.4,171.,222.,267.,332.,364.,389.,
-        409.,432.,448.,456.,458.,455.,451.,443.,
-        431.,416.,398.,379.,358.,335.,312.,288.,
-        264.,239.,214.,190.,167.,146.,126.,108.,
-        92.,78.,65.7,55.2,46.2,38.6,32.3,
-        27.1,22.8,19.2,16.3,13.9,11.9,
-        10.3,8.96,7.87,7,6.3,5.73,5.23,
-        4.82,4.55,4.22,3.99,3.84,3.63,
+    Flux = array([45.4,171.,222.,267.,332.,364.,389.,409.,432.,448.,456.,458.,455.,451.,443.,
+        431.,416.,398.,379.,358.,335.,312.,288.,264.,239.,214.,190.,167.,146.,126.,108.,
+        92.,78.,65.7,55.2,46.2,38.6,32.3,27.1,22.8,19.2,16.3,13.9,11.9,
+        10.3,8.96,7.87,7,6.3,5.73,5.23,4.82,4.55,4.22,3.99,3.84,3.63,
         3.45,3.33,3.20])*10**(-12)
-
 
     ## fill in the Q^2 = -q^2 values ##
     E_nu = linspace(0., 3.,len(Flux),endpoint=True)
@@ -745,7 +519,6 @@ def make_single_diff(Q2_passed,N):
     num_flux = 1000
     E_nu_new = linspace(0.02,3.,num_flux,endpoint=True)
     Flux_new = Func(E_nu_new)
-
 
     Total_Flux = 0
     for i in range(len(Flux_new)):
