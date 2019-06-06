@@ -124,24 +124,25 @@ def make_total_xs_binned(E_nu,M_A):
     m_mu = 0.1057
     E_nu_array = E_nu
     N = len(E_nu_array)
-    num_Q2  = 24
-    N_cos_max = int(amax(E_nu_array)+1)*800
+    num_Q2  = 40
+    N_cos_max = int(amax(E_nu_array)+1)*200
     N_T_max = 50+20*int(amax(E_nu_array))
     T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu = make_variables_unbinned(N_T_max,N_cos_max,E_nu_array[N-1])
     Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
     bin_edges = linspace(0.,8.,num_Q2+1)
     E_low  = -1.
     E_high = log10(20.)
-
+    lim =  amin(where(bin_edges >= 4.))
+    
     SIGMA_TOT = zeros(200)
     y = []
     y_labels = []
 
-    for k in range(num_Q2-6):
+    for k in range(lim):
         SIGMA = zeros(N)
         for m  in range(N):
             print "Starting Calculation for E_nu = %s out of E_nu = %s" % (round_sig(E_nu_array[m]),round_sig(nanmax(E_nu_array)))
-            N_cos = int(E_nu_array[m]+1)*800
+            N_cos = 100+int(E_nu_array[m]+1)*400
             N_T = 50+20*int(E_nu_array[m])
 
             bin_size = int(2*N_cos/100)
@@ -189,7 +190,7 @@ def make_total_xs_binned(E_nu,M_A):
         #SIGMA_new = Func(newer_E_nu)
 
         SIGMA_TOT  = SIGMA_TOT + SIGMA_new
-        y.append(SIGMA_TOT)
+        y.append(SIGMA_new)
         y_labels.append("Q2 < %s GeV^2" % bin_edges[k+1])
 
 
@@ -200,6 +201,7 @@ def make_total_xs_binned(E_nu,M_A):
     SIGMA_graph.set_title(r'Neutrino $^{12}C$ Cross Section ')
     SIGMA_graph.set_xlim(0.1,20.0)
     SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
+    SIGMA_graph.set_xscale('log')
 
     SIGMA_graph.stackplot(newer_E_nu,y,linestyle='-',linewidth=2,labels=y_labels)
     SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')

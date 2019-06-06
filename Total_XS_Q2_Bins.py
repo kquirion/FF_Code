@@ -96,12 +96,6 @@ for j in range(100):
 #SIGMA_graph_BAR.set_xlim(0.1,20.0)
 #SIGMA_graph_BAR.set_ylim(0.0,2.0*10**(-38))
 
-## Saves total cross section to Total_Cross_Section_Table.xlsx ##
-#writer=pandas.ExcelWriter('Total_Carbon_Cross_Section_Table.xlsx') 
-#Table_4 = DataFrame({'E_nu':new_E_nu, 'CS M_A = 1.03':SIGMA, 'CS M_A = 1.35':SIGMA_2,'CS M_A = M_A(Q^2)':SIGMA_Varied,'CS M_A = 1.03':SIGMA_BAR, 'nu_bar CS M_A = 1.35':SIGMA_BAR_2,'nu_bar CS M_A = M_A(Q^2)':SIGMA_BAR_Varied})
-#Table_4.to_excel(writer, sheet_name = 'Total Cross Sections', index='False') 
-#writer.save()
-
           
 #plt.show() 
 print("--- %s Minutes Until Finish" % ((time.time() - start_time)/60.0))
