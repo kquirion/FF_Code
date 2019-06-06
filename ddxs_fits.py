@@ -13,8 +13,12 @@ from numpy import (array,inf,where,linspace,power,broadcast_to,swapaxes,set_prin
     meshgrid,nanmax,nanmin,cos,arccos,amin,amax,empty,transpose,concatenate,sum )
 from math import pi
 
+
+
 #################################################
 ## Define the info needed for flux integration ##
+##########################################################
+## Rows are p_T and columns are p_|| qe-like scattering ##
 ##########################################################
 Minerva_ddxs = array([
     [7.50e-41 ,2.27e-40 ,8.75e-40 ,1.54e-39 ,1.94e-39 ,2.26e-39 ,2.56e-39 ,1.40e-39 ,5.78e-41 ,0.00e+00 ,0.00e+00 ,0.00e+00 ,0.00e+00],
@@ -106,6 +110,7 @@ Miniboone_Error = array([
 
 Miniboone_Error = where(Miniboone_Error == 0, inf, Miniboone_Error)
 
+
 def miniboone_chisq(M_A):
     data = Miniboone_XS.ravel()
     model = make_double_diff_miniboone(M_A)*1.08
@@ -170,7 +175,9 @@ else:
 E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
 
+
 ## recreate the cross section with new E_nu values from interpolation ##
+
 p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
 cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
 T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
@@ -185,14 +192,15 @@ P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
 #total_ddxs_calc = concatenate((double_diff_minerva.ravel(),double_diff_miniboone.ravel()))
 
 length_minerva  =  len(Minerva_ddxs_true.ravel())
+length_miniboone  =  len(Miniboone_XS.ravel())
+#length_total = len(total_ddxs_calc)
+
 minerva_chi_sq,minerva_tot_chi_sq =  calc_chi_squared(double_diff_minerva, Minerva_ddxs_true, Minerva_Error)
 print ('Minerva chi^2/(d.o.f.) =  %s'  %  round_sig(minerva_tot_chi_sq/length_minerva))
 
-length_miniboone  =  len(Miniboone_XS.ravel())
 miniboone_chi_sq,miniboone_tot_chi_sq =  calc_chi_squared(double_diff_miniboone, Miniboone_XS, Miniboone_Error)
 print ('MiniBooNE chi^2/(d.o.f.) =  %s'  %  round_sig(miniboone_tot_chi_sq/length_miniboone))
 
-#length_total = len(total_ddxs_calc)
 #total_chi_sq,total_tot_chi_sq =  calc_chi_squared(total_ddxs_calc, total_ddxs, total_error)
 #print ('Combined chi^2/(d.o.f.) =  %s'  %  round_sig(total_tot_chi_sq/length_total))
 
