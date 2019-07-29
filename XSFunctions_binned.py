@@ -8,7 +8,7 @@ from scipy.integrate import quad
 from sys import exit
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-from XSFunctions import make_a_elements,make_form_factors_dipole,calc_cross_section
+from XSFunctions import *
 from misc_fns import *
 from variable_fns import *
 
@@ -56,7 +56,7 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     ## parameters ##
     A = 12                                                  # number of Nucleons
     m_N = 0.9389                                            # mass of the Nucleon
-    E_b = 0.034                                             # binding energy GeV
+    E_b = 0.025                                             # binding energy GeV
     m_T = A*(m_N-E_b)                                       # mass of target Nucleus
     m_mu = 0.1057                                           # mass of Muon GeV
     V_ud = 0.9742                                           # Mixing element for up and down quarks
@@ -74,7 +74,7 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     ## calculate the a elements ##
     a_1,a_2,a_3,a_4,a_5,a_6,a_7 = make_a_elements(Q2,q,w,w_eff)
     ## calculate the form factors ##
-    F_1,F_2,F_A,F_P,M_A = make_form_factors_dipole(Q2,M_A)
+    F_1,F_2,F_A,F_P = make_form_factors_dipole(Q2,M_A)
 
     ## Use the Form Factors to Define the H Elements ##
     H_1 = 8.0*sq(m_N)*sq(F_A) + 2.0*Q2*(sq(F_1 + F_2) + sq(F_A))
@@ -91,10 +91,12 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     W_5 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_5 + m_T*(2.0*a_5 + (w/q)*(a_2 - 3.0*a_3))*(H_2/q)
 
     double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.0*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
-    double_diff = where(lower < Q2, double_diff, 0.)
-    double_diff = where(upper > Q2, double_diff, 0.)
+    double_diff = where(lower <= Q2, double_diff, 0.)
+    double_diff = where(upper >= Q2, double_diff, 0.)
+    #double_diff = where(40.<= Q2, 0., double_diff)
+    #double_diff = where(cos_mu < cos(20.*pi/180), 0., double_diff)
 
-    return double_diff,M_A
+    return double_diff
 
 ###################################
 ## function to do the dipole fit ##
@@ -120,30 +122,30 @@ def make_total_xs_binned(E_nu,M_A):
     A_Miniboone_XData = array([.425,.475,.525,.575,.625,.675,.725,.775,.85,.95,1.05,1.2,1.4,1.75])
     A_Miniboone_XS = array([1.808,1.89,2.019,2.258,2.501,2.728,2.932,3.091,3.372,3.815,4.254,4.789,5.784,7.086])*10**(-39)
     A_Miniboone_Error = array([6.267,4.471,4.433,4.384,4.335,4.559,4.39,4.56,4.821,5.663,6.704,9.831,17.42,31.26])*10**(-40)
-
+    
     m_mu = 0.1057
     E_nu_array = E_nu
     N = len(E_nu_array)
-    num_Q2  = 40
-    N_cos_max = int(amax(E_nu_array)+1)*200
-    N_T_max = 50+20*int(amax(E_nu_array))
+    N_cos_max = 200 + int(amax(E_nu_array)+1)*800
+    N_T_max = 100+20*int(amax(E_nu_array))
     T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu = make_variables_unbinned(N_T_max,N_cos_max,E_nu_array[N-1])
     Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
-    bin_edges = linspace(0.,8.,num_Q2+1)
+    print amin(Q2)
+    bin_edges = array([0.0,0.2,0.4,0.6,0.9,1.2,1.5,2.0,3.,7.5,round_sig(amax(Q2))])
+    num_Q2 = len(bin_edges)
     E_low  = -1.
     E_high = log10(20.)
-    lim =  amin(where(bin_edges >= 4.))
     
     SIGMA_TOT = zeros(200)
     y = []
     y_labels = []
-
-    for k in range(lim):
+    k = 0
+    while k < num_Q2-1:
         SIGMA = zeros(N)
         for m  in range(N):
-            print "Starting Calculation for E_nu = %s out of E_nu = %s" % (round_sig(E_nu_array[m]),round_sig(nanmax(E_nu_array)))
-            N_cos = 100+int(E_nu_array[m]+1)*400
-            N_T = 50+20*int(E_nu_array[m])
+            print(" %s%% complete" % (1.*(k*len(E_nu_array) + m)/(1.*(num_Q2-1)*len(E_nu_array))*100.))
+            N_cos = 100 + int(E_nu_array[m]+1)*800
+            N_T = 50 + 30*int(E_nu_array[m])
 
             bin_size = int(2*N_cos/100)
             num_bins = int(2*N_cos/bin_size)
@@ -162,7 +164,7 @@ def make_total_xs_binned(E_nu,M_A):
                 ## For the last entry, put 1 for neutrinos, or 2 for antineutrinos ##
                 #####################################################################
                 #double_diff = make_double_diff_BW(E_mu,E_nu,P_mu,cos_bin,GAMMA,M_A,2)
-                double_diff,M_A = make_double_diff_binned(E_mu,E_nu,P_mu,cos_bin,M_A,bin_edges[k],bin_edges[k+1])
+                double_diff = make_double_diff_binned(E_mu,E_nu,P_mu,cos_bin,M_A,bin_edges[k],bin_edges[k+1])
 
                 ## apply the angle cut of Minerva ##
                 #double_diff = where((arccos(cos_bin)*180/pi <= 20) & (arccos(cos_bin)*180/pi >= -20), double_diff, 0.)
@@ -176,39 +178,50 @@ def make_total_xs_binned(E_nu,M_A):
                 ## Add to total value of SIGMA ##
                 #################################
                 SIGMA[m] = SIGMA[m]+SIGMA_Temp
-
+               
         ###############################################
         ## plot the contribution of  each Q^2  range ##
         ###############################################
-
         Func = interp1d(E_nu_array,SIGMA,kind='cubic')
         newer_E_nu = logspace(E_low,E_high,200)
         SIGMA_new = Func(newer_E_nu)
-
-        #Func = interp1d(E_nu_array,SIGMA,kind='cubic')
-        #newer_E_nu = logspace(-1.,log10(20.),100)
-        #SIGMA_new = Func(newer_E_nu)
-
-        SIGMA_TOT  = SIGMA_TOT + SIGMA_new
+        ## uncomment these below if  you want to  get a rough idea  what the graph should look like, with lower number of T_mu, cos_mu points ##
+        #for j in range(100):
+        #    for i in range(len(newer_E_nu)):
+        #        if newer_E_nu[i] >= 9.:
+        #            SIGMA_new[i] = SIGMA_new[i-1]
         y.append(SIGMA_new)
-        y_labels.append("Q2 < %s GeV^2" % bin_edges[k+1])
-
-
+        y_labels.append(r"%s < $Q^2$ < %s " % (bin_edges[k],bin_edges[k+1]))
+        SIGMA_TOT  = SIGMA_TOT + SIGMA_new
+        k += 1
+        
+    #SIGMA_old = make_total_xs_dipole(E_nu_array,M_A)
+    
     fig = plt.figure()
     SIGMA_graph = fig.gca()
     SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
     SIGMA_graph.set_ylabel(r'$\sigma$ ($cm^2$)')
-    SIGMA_graph.set_title(r'Neutrino $^{12}C$ Cross Section ')
+    SIGMA_graph.set_title(r'Neutrino Cross Section: $M_A = %s GeV$ ' % M_A, y=1.05)
     SIGMA_graph.set_xlim(0.1,20.0)
     SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
     SIGMA_graph.set_xscale('log')
-
+    
+    if M_A == 1.05:
+        col = 'green'
+    elif M_A == 1.35:
+        col = 'red'
+    elif M_A ==  1.45:
+        col =  'cyan'
+                  
     SIGMA_graph.stackplot(newer_E_nu,y,linestyle='-',linewidth=2,labels=y_labels)
-    SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
+    SIGMA_graph.plot(newer_E_nu,SIGMA_TOT,color=col,linestyle='-')
     SIGMA_graph.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
+    #SIGMA_graph.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
     SIGMA_graph.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
-    SIGMA_graph.legend()
+    chartBox = SIGMA_graph.get_position()
+    SIGMA_graph.set_position([chartBox.x0, chartBox.y0, chartBox.width*0.9, chartBox.height])
+    SIGMA_graph.legend(loc='upper center', title = r"$Q^2$ in $GeV^2$", bbox_to_anchor=(1.12, 1.), shadow=True, ncol=1, prop={'size': 6})
+    fig.savefig("Desktop/Research/Axial FF/Plots/Q2 Conts 2./Q2_Stacks_%s_v6..pdf" % M_A )
 
-    fig.savefig("Desktop/Research/Axial FF/Plots/Q2 Conts 2./Q2_Stacks.pdf" )
 
     return SIGMA_TOT
