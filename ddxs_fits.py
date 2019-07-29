@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## This file fits to Minerva and miniboone, calculates chi_sq, and plots the fit ##
 
 import time
@@ -8,12 +9,14 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from pandas import DataFrame
 from scipy.optimize import curve_fit,minimize
 from scipy.interpolate import interp1d
-from XSFunctions import sq,weight_sum_3d,make2d,calc_chi_squared,make_form_factors_dipole,flux_interpolate,round_sig,make_double_diff_miniboone
-from numpy import (array,inf,where,linspace,power,broadcast_to,swapaxes,set_printoptions,sqrt,
-    meshgrid,nanmax,nanmin,cos,arccos,amin,amax,empty,transpose,concatenate,sum )
+from XSFunctions import sq,weight_sum_3d,make2d,calc_chi_squared,make_form_factors_dipole,flux_interpolate,round_sig,make_double_diff_miniboone,flux_interpolate_unc
+from numpy import (array,inf,where,linspace,power,broadcast_to,swapaxes,set_printoptions,sqrt,zeros,asarray,zeros_like,diag,
+    meshgrid,nanmax,nanmin,cos,arccos,amin,amax,empty,transpose,concatenate,sum,append,set_printoptions )
+from numpy.linalg import inv
 from math import pi
+from misc_fns import *
 
-
+set_printoptions(precision=3)
 
 #################################################
 ## Define the info needed for flux integration ##
@@ -35,21 +38,52 @@ Minerva_ddxs = array([
     [2.50e-42 ,5.03e-42 ,9.61e-42 ,1.71e-41 ,2.50e-41 ,3.27e-41 ,3.14e-41 ,2.48e-41 ,2.14e-41 ,1.60e-41 ,8.15e-42 ,2.50e-42 ,2.83e-43]
     ])
 
+#Minerva_ddxs_true = array([
+#    [4.01e-41, 1.34e-40, 6.70e-40, 1.21e-39 ,1.54e-39 ,1.77e-39 ,2.03e-39 ,1.11e-39 ,5.27e-41 ,0.00e+00 ,0.00e+00 ,0.00e+00 ,0.00e+00],
+#    [1.16e-41 ,2.06e-40 ,7.47e-40 ,1.32e-39 ,1.91e-39 ,2.19e-39 ,2.41e-39 ,2.10e-39 ,1.17e-39 ,1.01e-40 ,0.00e+00 ,0.00e+00 ,0.00e+00],
+#    [4.79e-41 ,2.87e-40 ,9.16e-40 ,1.51e-39 ,2.17e-39 ,2.42e-39 ,2.59e-39 ,2.20e-39 ,1.46e-39 ,8.48e-40 ,6.95e-41 ,0.00e+00 ,0.00e+00],
+#    [6.79e-41 ,2.60e-40 ,7.83e-40 ,1.50e-39 ,1.71e-39 ,2.20e-39 ,2.24e-39 ,1.75e-39 ,1.16e-39 ,6.75e-40 ,1.79e-40 ,0.00e+00 ,0.00e+00],
+#    [3.99e-41 ,1.73e-40 ,4.77e-40 ,9.82e-40 ,1.15e-39 ,1.28e-39 ,1.32e-39 ,1.05e-39 ,6.75e-40 ,3.86e-40 ,1.33e-40 ,1.15e-41 ,0.00e+00],
+#    [1.08e-41 ,1.01e-40 ,2.93e-40 ,5.07e-40 ,6.51e-40 ,7.51e-40 ,7.17e-40 ,5.72e-40 ,3.97e-40 ,2.18e-40 ,7.97e-41 ,1.10e-41 ,1.01e-42],
+#    [1.35e-41 ,7.32e-41 ,1.72e-40 ,2.91e-40 ,3.71e-40 ,4.17e-40 ,4.36e-40 ,3.68e-40 ,2.12e-40 ,1.46e-40 ,6.46e-41 ,1.63e-41 ,1.14e-42],
+#    [6.17e-42 ,4.23e-41 ,1.22e-40 ,1.78e-40 ,2.49e-40 ,3.07e-40 ,2.62e-40 ,2.41e-40 ,1.61e-40 ,1.07e-40 ,4.68e-41 ,1.38e-41 ,6.56e-43],
+#    [5.77e-42, 2.68e-41 ,6.90e-41 ,1.14e-40 ,1.55e-40 ,1.61e-40 ,1.57e-40 ,1.38e-40 ,1.19e-40 ,6.33e-41 ,2.47e-41 ,6.87e-42 ,3.87e-43],
+#    [4.05e-42 ,1.93e-41 ,3.92e-41 ,6.33e-41 ,8.79e-41 ,1.17e-40 ,9.08e-41 ,7.67e-41 ,6.46e-41 ,5.10e-41 ,2.01e-41 ,6.23e-42 ,2.33e-43],
+#    [1.50e-42 ,9.82e-42 ,1.78e-41 ,3.59e-41 ,5.28e-41 ,6.77e-41 ,6.16e-41 ,4.46e-41 ,3.24e-41 ,2.22e-41 ,1.34e-41 ,3.70e-42 ,2.01e-43],
+#    [8.51e-43 ,3.88e-42 ,7.44e-42 ,1.42e-41 ,2.13e-41 ,2.89e-41 ,2.72e-41 ,2.05e-41 ,1.79e-41 ,1.35e-41 ,6.77e-42 ,1.82e-42 ,1.56e-43]
+#    ])
+
 Minerva_ddxs_true = array([
-    [4.01e-41, 1.34e-40, 6.70e-40, 1.21e-39 ,1.54e-39 ,1.77e-39 ,2.03e-39 ,1.11e-39 ,5.27e-41 ,0.00e+00 ,0.00e+00 ,0.00e+00 ,0.00e+00],
-    [1.16e-41 ,2.06e-40 ,7.47e-40 ,1.32e-39 ,1.91e-39 ,2.19e-39 ,2.41e-39 ,2.10e-39 ,1.17e-39 ,1.01e-40 ,0.00e+00 ,0.00e+00 ,0.00e+00],
-    [4.79e-41 ,2.87e-40 ,9.16e-40 ,1.51e-39 ,2.17e-39 ,2.42e-39 ,2.59e-39 ,2.20e-39 ,1.46e-39 ,8.48e-40 ,6.95e-41 ,0.00e+00 ,0.00e+00],
-    [6.79e-41 ,2.60e-40 ,7.83e-40 ,1.50e-39 ,1.71e-39 ,2.20e-39 ,2.24e-39 ,1.75e-39 ,1.16e-39 ,6.75e-40 ,1.79e-40 ,0.00e+00 ,0.00e+00],
-    [3.99e-41 ,1.73e-40 ,4.77e-40 ,9.82e-40 ,1.15e-39 ,1.28e-39 ,1.32e-39 ,1.05e-39 ,6.75e-40 ,3.86e-40 ,1.33e-40 ,1.15e-41 ,0.00e+00],
-    [1.08e-41 ,1.01e-40 ,2.93e-40 ,5.07e-40 ,6.51e-40 ,7.51e-40 ,7.17e-40 ,5.72e-40 ,3.97e-40 ,2.18e-40 ,7.97e-41 ,1.10e-41 ,1.01e-42],
-    [1.35e-41 ,7.32e-41 ,1.72e-40 ,2.91e-40 ,3.71e-40 ,4.17e-40 ,4.36e-40 ,3.68e-40 ,2.12e-40 ,1.46e-40 ,6.46e-41 ,1.63e-41 ,1.14e-42],
-    [6.17e-42 ,4.23e-41 ,1.22e-40 ,1.78e-40 ,2.49e-40 ,3.07e-40 ,2.62e-40 ,2.41e-40 ,1.61e-40 ,1.07e-40 ,4.68e-41 ,1.38e-41 ,6.56e-43],
-    [5.77e-42, 2.68e-41 ,6.90e-41 ,1.14e-40 ,1.55e-40 ,1.61e-40 ,1.57e-40 ,1.38e-40 ,1.19e-40 ,6.33e-41 ,2.47e-41 ,6.87e-42 ,3.87e-43],
-    [4.05e-42 ,1.93e-41 ,3.92e-41 ,6.33e-41 ,8.79e-41 ,1.17e-40 ,9.08e-41 ,7.67e-41 ,6.46e-41 ,5.10e-41 ,2.01e-41 ,6.23e-42 ,2.33e-43],
-    [1.50e-42 ,9.82e-42 ,1.78e-41 ,3.59e-41 ,5.28e-41 ,6.77e-41 ,6.16e-41 ,4.46e-41 ,3.24e-41 ,2.22e-41 ,1.34e-41 ,3.70e-42 ,2.01e-43],
-    [8.51e-43 ,3.88e-42 ,7.44e-42 ,1.42e-41 ,2.13e-41 ,2.89e-41 ,2.72e-41 ,2.05e-41 ,1.79e-41 ,1.35e-41 ,6.77e-42 ,1.82e-42 ,1.56e-43]
+    [4.01e-41, 1.34e-40, 6.70e-40, 1.21e-39 ,1.54e-39 ,1.77e-39 ,2.03e-39 ,1.11e-39 ,5.27e-41 ,0.00e+00 ,0.00e+00 ,0.00e+00],
+    [1.16e-41 ,2.06e-40 ,7.47e-40 ,1.32e-39 ,1.91e-39 ,2.19e-39 ,2.41e-39 ,2.10e-39 ,1.17e-39 ,1.01e-40 ,0.00e+00 ,0.00e+00],
+    [4.79e-41 ,2.87e-40 ,9.16e-40 ,1.51e-39 ,2.17e-39 ,2.42e-39 ,2.59e-39 ,2.20e-39 ,1.46e-39 ,8.48e-40 ,6.95e-41 ,0.00e+00],
+    [6.79e-41 ,2.60e-40 ,7.83e-40 ,1.50e-39 ,1.71e-39 ,2.20e-39 ,2.24e-39 ,1.75e-39 ,1.16e-39 ,6.75e-40 ,1.79e-40 ,0.00e+00],
+    [3.99e-41 ,1.73e-40 ,4.77e-40 ,9.82e-40 ,1.15e-39 ,1.28e-39 ,1.32e-39 ,1.05e-39 ,6.75e-40 ,3.86e-40 ,1.33e-40 ,1.15e-41],
+    [1.08e-41 ,1.01e-40 ,2.93e-40 ,5.07e-40 ,6.51e-40 ,7.51e-40 ,7.17e-40 ,5.72e-40 ,3.97e-40 ,2.18e-40 ,7.97e-41 ,1.10e-41],
+    [1.35e-41 ,7.32e-41 ,1.72e-40 ,2.91e-40 ,3.71e-40 ,4.17e-40 ,4.36e-40 ,3.68e-40 ,2.12e-40 ,1.46e-40 ,6.46e-41 ,1.63e-41],
+    [6.17e-42 ,4.23e-41 ,1.22e-40 ,1.78e-40 ,2.49e-40 ,3.07e-40 ,2.62e-40 ,2.41e-40 ,1.61e-40 ,1.07e-40 ,4.68e-41 ,1.38e-41],
+    [5.77e-42, 2.68e-41 ,6.90e-41 ,1.14e-40 ,1.55e-40 ,1.61e-40 ,1.57e-40 ,1.38e-40 ,1.19e-40 ,6.33e-41 ,2.47e-41 ,6.87e-42],
+    [4.05e-42 ,1.93e-41 ,3.92e-41 ,6.33e-41 ,8.79e-41 ,1.17e-40 ,9.08e-41 ,7.67e-41 ,6.46e-41 ,5.10e-41 ,2.01e-41 ,6.23e-42],
+    [1.50e-42 ,9.82e-42 ,1.78e-41 ,3.59e-41 ,5.28e-41 ,6.77e-41 ,6.16e-41 ,4.46e-41 ,3.24e-41 ,2.22e-41 ,1.34e-41 ,3.70e-42],
+    [8.51e-43 ,3.88e-42 ,7.44e-42 ,1.42e-41 ,2.13e-41 ,2.89e-41 ,2.72e-41 ,2.05e-41 ,1.79e-41 ,1.35e-41 ,6.77e-42 ,1.82e-42]
     ])
 
+#Minerva_Error = transpose(array([
+#    [2.43e-41, 1.78e-41, 2.25e-41, 1.97e-41, 1.51e-41, 6.65e-42, 6.86e-42, 4.24e-42, 2.69e-42, 1.89e-42, 1.19e-42, 7.33e-43],
+#    [6.27e-41, 5.90e-41, 6.02e-41, 4.51e-41, 3.24e-41, 2.15e-41, 1.61e-41, 9.71e-42, 5.77e-42, 4.93e-42, 2.09e-42, 1.00e-42],
+#    [1.69e-40, 1.27e-40, 1.26e-40, 9.06e-41, 6.11e-41, 4.00e-41, 2.54e-41, 1.71e-41, 1.01e-41, 6.91e-42, 3.12e-42, 1.44e-42],
+#    [2.62e-40, 2.15e-40, 2.00e-40, 1.61e-40, 1.13e-40, 6.58e-41, 4.02e-41, 2.40e-41, 1.49e-41, 9.92e-42, 5.50e-42, 2.32e-42],
+#    [3.44e-40, 2.67e-40, 2.76e-40, 1.85e-40, 1.34e-40, 8.89e-41, 4.94e-41, 3.13e-41, 1.91e-41, 1.27e-41, 7.39e-42, 3.31e-42],
+#    [3.49e-40, 3.04e-40, 2.88e-40, 2.33e-40, 1.53e-40, 9.99e-41, 5.76e-41, 3.71e-41, 2.02e-41, 1.50e-41, 8.12e-42, 3.93e-42],
+#    [3.82e-40, 3.34e-40, 2.87e-40, 2.43e-40, 1.82e-40, 9.14e-41, 5.72e-41, 3.29e-41, 1.96e-41, 1.24e-41, 7.53e-42, 3.83e-42],
+#    [1.98e-40, 2.83e-40, 2.43e-40, 1.99e-40, 1.45e-40, 8.21e-41, 4.76e-41, 2.90e-41, 1.71e-41, 1.09e-41, 6.16e-42, 3.03e-42],
+#    [2.03e-41, 1.60e-40, 1.75e-40, 1.64e-40, 1.05e-40, 6.18e-41, 3.25e-41, 2.20e-41, 1.61e-41, 9.93e-42, 4.88e-42, 2.92e-42],
+#    [0.00e+00, 2.82e-41, 1.27e-40, 1.21e-40, 7.30e-41, 4.34e-41, 2.81e-41, 1.91e-41, 1.19e-41, 9.14e-42, 4.03e-42, 2.52e-42],
+#    [0.00e+00, 0.00e+00, 1.89e-41, 4.27e-41, 3.34e-41, 2.01e-41, 1.48e-41, 1.22e-41, 6.56e-42, 5.23e-42, 3.00e-42, 2.01e-42],
+#    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 5.33e-42, 5.47e-42, 7.22e-42, 5.82e-42, 3.46e-42, 3.22e-42, 1.72e-42, 1.13e-42],
+#    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 1.63e-43, 7.02e-43, 5.31e-43, 3.21e-43, 2.67e-43, 2.16e-43, 2.05e-43]
+#    ]))
+    
 Minerva_Error = transpose(array([
     [2.43e-41, 1.78e-41, 2.25e-41, 1.97e-41, 1.51e-41, 6.65e-42, 6.86e-42, 4.24e-42, 2.69e-42, 1.89e-42, 1.19e-42, 7.33e-43],
     [6.27e-41, 5.90e-41, 6.02e-41, 4.51e-41, 3.24e-41, 2.15e-41, 1.61e-41, 9.71e-42, 5.77e-42, 4.93e-42, 2.09e-42, 1.00e-42],
@@ -62,12 +96,29 @@ Minerva_Error = transpose(array([
     [2.03e-41, 1.60e-40, 1.75e-40, 1.64e-40, 1.05e-40, 6.18e-41, 3.25e-41, 2.20e-41, 1.61e-41, 9.93e-42, 4.88e-42, 2.92e-42],
     [0.00e+00, 2.82e-41, 1.27e-40, 1.21e-40, 7.30e-41, 4.34e-41, 2.81e-41, 1.91e-41, 1.19e-41, 9.14e-42, 4.03e-42, 2.52e-42],
     [0.00e+00, 0.00e+00, 1.89e-41, 4.27e-41, 3.34e-41, 2.01e-41, 1.48e-41, 1.22e-41, 6.56e-42, 5.23e-42, 3.00e-42, 2.01e-42],
-    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 5.33e-42, 5.47e-42, 7.22e-42, 5.82e-42, 3.46e-42, 3.22e-42, 1.72e-42, 1.13e-42],
-    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 1.63e-43, 7.02e-43, 5.31e-43, 3.21e-43, 2.67e-43, 2.16e-43, 2.05e-43]
+    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 5.33e-42, 5.47e-42, 7.22e-42, 5.82e-42, 3.46e-42, 3.22e-42, 1.72e-42, 1.13e-42]
     ]))
 
 Minerva_Error = where(Minerva_Error == 0., inf, Minerva_Error)
 
+minerva_cov = array([
+    [7.434295e-79,3.934240e-79,3.281367e-79,1.495138e-79,-8.677497e-80,-1.902412e-79,-1.805644e-79,-4.365073e-80,9.203404e-80,9.577143e-80,1.941265e-79,-1.288537e-79],
+    [3.934240e-79,3.041391e-79,2.669181e-79,1.807988e-79,6.755860e-80,1.488405e-80,2.526156e-80,1.047402e-79,1.980797e-79,2.019116e-79,2.471540e-79,1.271173e-79],
+    [3.281367e-79,2.669181e-79,2.673700e-79,1.952730e-79,1.072995e-79,6.461202e-80,7.058657e-80,1.319044e-79,2.102430e-79,2.148543e-79,2.520447e-79,1.699918e-79],
+    [1.495138e-79,1.807988e-79,1.952730e-79,1.967074e-79,1.786956e-79,1.730843e-79,1.811024e-79,1.898873e-79,2.128262e-79,2.115443e-79,2.247417e-79,2.322281e-79],
+    [-8.677497e-80,6.755860e-80,1.072995e-79,1.786956e-79,2.827037e-79,3.382258e-79,3.546145e-79,2.878382e-79,2.292199e-79,2.194552e-79,1.952171e-79,3.302760e-79],
+    [-1.902412e-79,1.488405e-80,6.461202e-80,1.730843e-79,3.382258e-79,4.617789e-79,4.953105e-79,3.688232e-79,2.523654e-79,2.341835e-79,1.909539e-79,3.896053e-79],
+    [-1.805644e-79,2.526156e-80,7.058657e-80,1.811024e-79,3.546145e-79,4.953105e-79,5.740397e-79,4.366020e-79,3.046689e-79,2.841074e-79,2.379406e-79,4.469518e-79],
+    [-4.365073e-80,1.047402e-79,1.319044e-79,1.898873e-79,2.878382e-79,3.688232e-79,4.366020e-79,4.210294e-79,3.652771e-79,3.499060e-79,3.254315e-79,4.747785e-79],
+    [9.203404e-80,1.980797e-79,2.102430e-79,2.128262e-79,2.292199e-79,2.523654e-79,3.046689e-79,3.652771e-79,4.852663e-79,4.689481e-79,4.605253e-79,5.664493e-79],
+    [9.577143e-80,2.019116e-79,2.148543e-79,2.115443e-79,2.194552e-79,2.341835e-79,2.841074e-79,3.499060e-79,4.689481e-79,5.337843e-79,4.898404e-79,5.993116e-79],
+    [1.941265e-79,2.471540e-79,2.520447e-79,2.247417e-79,1.952171e-79,1.909539e-79,2.379406e-79,3.254315e-79,4.605253e-79,4.898404e-79,5.519849e-79,5.882107e-79],
+    [-1.288537e-79,1.271173e-79,1.699918e-79,2.322281e-79,3.302760e-79,3.896053e-79,4.469518e-79,4.747785e-79,5.664493e-79,5.993116e-79,5.882107e-79,9.890803e-79]
+    ])
+    
+cov_inv = inv(minerva_cov)
+
+    
 ## create the 2d array of miniBooNE data for the double fifferential cross section ##
 Miniboone_XS = array([[289.2,348.7,418.3,497.6,600.2,692.3,778.1,557.5,891.8,919.3,1003.0,1007.0,992.3,910.2,871.9,765.6,681.9,553.6,401.9,190.0],
     [15.18,25.82,44.84,85.80,135.2,202.2,292.1,401.6,503.3,686.6,813.1,970.2,1148.0,1157.0,1279.0,1233.0,1222.0,981.1,780.6,326.5],
@@ -110,47 +161,24 @@ Miniboone_Error = array([
 
 Miniboone_Error = where(Miniboone_Error == 0, inf, Miniboone_Error)
 
-
-def miniboone_chisq(M_A):
-    data = Miniboone_XS.ravel()
-    model = make_double_diff_miniboone(M_A)*1.08
-    model = model.ravel()
-    err = Miniboone_Error.ravel()
-    chisq_list = sq((data-model)/err)
-    chisq_dof = sum(chisq_list)/len(data)
-    print chisq_dof
-
-    return chisq_dof
-
-def minerva_chisq(M_A):
-    data = Minerva_ddxs_true.ravel()
-    model = flux_interpolate(M_A)
-    model = model.ravel()
-    err = Minerva_Error.ravel()
-    chisq_list = sq((data-model)/err)
-    chisq_dof = sum(chisq_list)/len(data)
-    print chisq_dof
-
-    return chisq_dof
-
-m_mu = .1057
-x0 = 1.
-
-res_miniboone = minimize(miniboone_chisq,x0,method='Nelder-Mead',tol=1e-6)
-res_minerva = minimize(minerva_chisq,x0,method='Nelder-Mead',tol=1e-6)
-
-print res_miniboone.x
-print res_minerva.x
-
 ## Lower edges of the bins ##
-p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+#p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
 p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
 ## higher edges of the bins ##
-p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
+#p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
+p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
 p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
 ## middle of each bin ##
-p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
-p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
+p_T_1D = array((p_T_1D_high + p_T_1D_high)/2.)
+p_P_1D = array((p_P_1D_high + p_P_1D_high)/2.)
+
+## some  parameters ##
+m_mu = .1057
+N = 150
+num_flux = 200
+
+popt,pcov = curve_fit(flux_interpolate,(N,num_flux),Minerva_ddxs_true.ravel(),1.)
 
 ## Miniboone Kinematic variables ##
 T_mu_1D = linspace(0.25,1.95,18,endpoint=True)
@@ -158,26 +186,45 @@ cos_mu_1D = linspace(-.95,.95,20,endpoint=True)
 E_nu_1D = linspace(0.05, (60)/20.0,60,endpoint=True)
 T_mu,cos_mu,E_nu = meshgrid(T_mu_1D,cos_mu_1D,E_nu_1D,indexing='ij')
 
-double_diff_miniboone = make_double_diff_miniboone(res_miniboone.x[0])
-double_diff_minerva = flux_interpolate(res_minerva.x[0])
-
-print(" M_A_miniboone = %s" % res_miniboone.x[0])
-print(" M_A_minerva = %s" % res_minerva.x[0])
+print(" M_A_minerva = %s" % popt[len(popt)-1])
 
 M_A = 1.35
-M_A_minerva = res_minerva.x[0]
-M_A_miniboone = res_miniboone.x[0]
+M_A_minerva = popt[0]
+col  = 'cyan'
 if M_A == 1.35:
     col = 'red'
-else:
+elif M_A == 1.05:
     col = 'green'
+elif M_A == 1.45:
+    col = 'cyan'
+    
+    
+#M_A_minerva = 1.45
+col = 'cyan'
+
+#double_diff_miniboone = make_double_diff_miniboone(res_miniboone.x[0])
+#double_diff_minerva = flux_interpolate(res_minerva.x[0])
+
+double_diff_minerva = flux_interpolate((N,num_flux),popt[0])
+minerva_unc = flux_interpolate_unc((N,num_flux),M_A_minerva)
+minerva_chi_sq,minerva_tot_chi_sq =  calc_chi_squared(double_diff_minerva, Minerva_ddxs_true, Minerva_Error)
+
+#double_diff_minerva = make2d(p_P_1D,p_T_1D,double_diff_minerva)
+#minerva_chi_sq = make2d(p_P_1D,p_T_1D,minerva_chi_sq)
+#minerva_unc = make2d(p_P_1D,p_T_1D,minerva_unc)
+
+length_minerva  =  len(Minerva_ddxs_true.ravel()) - 1
+length_miniboone  =  137 - 1 
+
+#print ("Uncertainty  for minerva is:  %s " % minerva_unc)
+#print(minerva_chi_sq)
+print ('Minerva chi^2/(d.o.f.) =  %s'  %  round_sig(minerva_tot_chi_sq/length_minerva))
+print  minerva_tot_chi_sq
 
 E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
 
-
 ## recreate the cross section with new E_nu values from interpolation ##
-
 p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
 cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
 T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
@@ -189,24 +236,12 @@ cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
 E_mu_3D = T_mu_3D + m_mu
 P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
 
-#total_ddxs_calc = concatenate((double_diff_minerva.ravel(),double_diff_miniboone.ravel()))
-
-length_minerva  =  len(Minerva_ddxs_true.ravel())
-length_miniboone  =  len(Miniboone_XS.ravel())
-#length_total = len(total_ddxs_calc)
-
-minerva_chi_sq,minerva_tot_chi_sq =  calc_chi_squared(double_diff_minerva, Minerva_ddxs_true, Minerva_Error)
-print ('Minerva chi^2/(d.o.f.) =  %s'  %  round_sig(minerva_tot_chi_sq/length_minerva))
-
-miniboone_chi_sq,miniboone_tot_chi_sq =  calc_chi_squared(double_diff_miniboone, Miniboone_XS, Miniboone_Error)
-print ('MiniBooNE chi^2/(d.o.f.) =  %s'  %  round_sig(miniboone_tot_chi_sq/length_miniboone))
-
-#total_chi_sq,total_tot_chi_sq =  calc_chi_squared(total_ddxs_calc, total_ddxs, total_error)
-#print ('Combined chi^2/(d.o.f.) =  %s'  %  round_sig(total_tot_chi_sq/length_total))
+#miniboone_chi_sq,miniboone_tot_chi_sq =  calc_chi_squared(double_diff_miniboone, Miniboone_XS, Miniboone_Error)
+#print ('MiniBooNE chi^2/(d.o.f.) =  %s'  %  round_sig(miniboone_tot_chi_sq/length_miniboone))
 
 ## Create the plot for the double differential cross section ##
 figax1 = plt.figure()
-figax2 = plt.figure()
+#figax2 = plt.figure()
 
 ax1 = figax1.gca(projection='3d')
 ax1.set_xlabel(r"$p_P$ (GeV)")
@@ -214,21 +249,37 @@ ax1.set_ylabel('$p_T$ (GeV)')
 ax1.set_zlabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} $")
 ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
 
-ax2 = figax2.gca(projection='3d')
-ax2.set_xlabel(r"$T_{\mu}$ (GeV)")
-ax2.set_ylabel('$cos\theta_\mu$ ')
-ax2.set_zlabel(r"$\frac{d\sigma}{dT_\mu \, dcos\theta_\mu} $")
-ax2.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
+#ax2 = figax2.gca(projection='3d')
+#ax2.set_xlabel(r"$T_{\mu}$ (GeV)")
+#ax2.set_ylabel('$cos\theta_\mu$ ')
+#ax2.set_zlabel(r"$\frac{d\sigma}{dT_\mu \, dcos\theta_\mu} $")
+#ax2.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
 
 x,y = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-ax1.scatter(x,y,double_diff_minerva,color=col,marker='s',label="RFG Model: M_A = %s GeV" % M_A_minerva)
+ax1.scatter(x,y,double_diff_minerva,color=col,marker='s',label="RFG Model: M_A = %s GeV" % round_sig(M_A_minerva))
 ax1.scatter(x,y,Minerva_ddxs_true,color='black',marker='s',label="Minerva Neutrino Data",depthshade=False)
+ax1.legend(loc=(0.35,0.7))
 
-x2,y2 = meshgrid(T_mu_1D,cos_mu_1D,indexing='ij')
-ax2.scatter(x2,y2,double_diff_miniboone,color=col,marker='s',label="RFG Model: M_A = %s GeV" % M_A_miniboone)
-ax2.scatter(x2,y2,Miniboone_XS,color='black',marker='s',label="Miniboone Neutrino Data",depthshade=False)
+figax1.savefig("Desktop/Research/Axial FF/Plots/Minerva_ddxs_%s.pdf" % round_sig(M_A_minerva) )
 
-ax1.legend(loc=(0.52,0.65))
-ax2.legend(loc=(0.52,0.65))
+#x2,y2 = meshgrid(T_mu_1D,cos_mu_1D,indexing='ij')
+#ax2.scatter(x2,y2,double_diff_miniboone,color=col,marker='s',label="RFG Model: M_A = %s GeV" % round_sig(M_A_miniboone))
+#ax2.scatter(x2,y2,Miniboone_XS,color='black',marker='s',label="Miniboone Neutrino Data",depthshade=False)
+
+#ax2.legend(loc=(0.52,0.65))
+#f=open("Desktop/Research/xial FF/txt files/miniboone_chisq_table.txt","w+")
+#f.write(" data     model     error      chisq     \n")
+#for i in range(len(T_mu_1D)):
+#    for j in range(len(cos_mu_1D)):
+#        f.write(" %s     %s     %s    %s   \n" % (Miniboone_XS[i,j], (double_diff_miniboone[i,j]),  Miniboone_Error[i,j], (miniboone_chi_sq[i,j])))
+#.f.close()
+g=open("Desktop/Research/Axial FF/txt files/minerva_chisq_table_%s_%s_bins.txt" % (round_sig(M_A_minerva),N),"w+")
+g.write("\n\n Total chi-squared = %s \n chi-squared/d.o.f.  = %s \n M_A = %s  \n\n" % (minerva_tot_chi_sq,minerva_tot_chi_sq/length_minerva,round_sig(M_A_minerva)))
+g.write("p_T       p_||       data       model       error       chisq     \n")
+for i in range(len(p_P_1D)):
+    for j in range(len(p_T_1D)):
+        g.write("%s      %s      %s      %s      %s      %s \n" % (p_T_2D[i,j],p_P_2D[i,j],Minerva_ddxs[i,j],round_sig(double_diff_minerva[i*len(p_T_1D)+j]),Minerva_Error[i,j],round_sig(minerva_chi_sq[i*len(p_T_1D)+j])))
+g.close()
+ 
 
 plt.show()

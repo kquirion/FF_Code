@@ -143,7 +143,7 @@ def make_double_diff_monopole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     ## calculate the a elements ##
     a_1,a_2,a_3,a_4,a_5,a_6,a_7 = make_a_elements(Q2,q,w,w_eff)
     ## calculate the form factors ##
-    F_1,F_2,F_A,F_P,M_A = make_form_factors_dipole(Q2,M_A)
+    F_1,F_2,F_A,F_P,M_A = make_form_factors_monopole(Q2,M_A)
 
     ## Use the Form Factors to Define the H Elements ##
     H_1 = 8.0*sq(m_N)*sq(F_A) + 2.0*Q2*(sq(F_1 + F_2) + sq(F_A))
@@ -166,7 +166,7 @@ def make_double_diff_monopole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     else:
         print("Please Enter 1 for neutrino or 2 for antineutrino in the last argument of make_double_diff_dipole")
         exit()
-    double_diff = where(Q2 > 4., 0., double_diff)
+    double_diff = where(Q2 > 6., 0., double_diff)
     return double_diff,M_A
 
 ###################################

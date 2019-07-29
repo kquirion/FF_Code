@@ -17,8 +17,11 @@ def sq(A):
 ###############################################################################
 ## Create a function for rounding to 4 significant figures (for readability) ##
 ###############################################################################
-def round_sig(x, sig=4):
-   return round(x, sig-int(floor(log10(abs(x))))-1)
+def round_sig(x, sig=3):
+    if x == 0.:
+        return 0.
+    else:
+        return round(x, sig-int(floor(log10(abs(x))))-1)
 
 ############################################################################
 ## make a function to convert 1D array into a 2D array of dimension (x,y) ##
@@ -36,7 +39,7 @@ def make2d(x,y,vector):
 ## Create a function to calculate point-wise and total xi squared ##
 ####################################################################
 def calc_chi_squared(Theo,Exp,Exp_err):
-    chi_squared_individual =  sq((Theo-Exp)/Exp_err)
+    chi_squared_individual =  array(sq((Theo.ravel()-Exp.ravel())/Exp_err.ravel()))
     chi_squared = sum(chi_squared_individual)
     return chi_squared_individual,chi_squared
 
@@ -53,7 +56,7 @@ def weight_sum_3d(vector,weight):
         for j in range(y):
             Int = 0
             for k in range(z-1):
-                Int = Int + 0.5*(weight[i][j][k]*vector[i][j][k] + weight[i][j][k+1]*vector[i][j][k+1])
+                Int = Int + (weight[i][j][k]*vector[i][j][k])
             output[i][j] = Int
     return output
 
