@@ -9,7 +9,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from pandas import DataFrame
 from scipy.optimize import curve_fit,minimize
 from scipy.interpolate import interp1d
-from XSFunctions import sq,weight_sum_3d,make2d,calc_chi_squared,make_form_factors_dipole,flux_interpolate,round_sig,make_double_diff_miniboone,flux_interpolate_unc
+from xs_functions_dipole import sq,weight_sum_3d,make2d,calc_chi_squared,make_form_factors_dipole,flux_interpolate,round_sig,make_double_diff_miniboone,flux_interpolate_unc
 from numpy import (array,inf,where,linspace,power,broadcast_to,swapaxes,set_printoptions,sqrt,zeros,asarray,zeros_like,diag,
     meshgrid,nanmax,nanmin,cos,arccos,amin,amax,empty,transpose,concatenate,sum,append,set_printoptions )
 from numpy.linalg import inv
@@ -83,7 +83,7 @@ Minerva_ddxs_true = array([
 #    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 5.33e-42, 5.47e-42, 7.22e-42, 5.82e-42, 3.46e-42, 3.22e-42, 1.72e-42, 1.13e-42],
 #    [0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 1.63e-43, 7.02e-43, 5.31e-43, 3.21e-43, 2.67e-43, 2.16e-43, 2.05e-43]
 #    ]))
-    
+
 Minerva_Error = transpose(array([
     [2.43e-41, 1.78e-41, 2.25e-41, 1.97e-41, 1.51e-41, 6.65e-42, 6.86e-42, 4.24e-42, 2.69e-42, 1.89e-42, 1.19e-42, 7.33e-43],
     [6.27e-41, 5.90e-41, 6.02e-41, 4.51e-41, 3.24e-41, 2.15e-41, 1.61e-41, 9.71e-42, 5.77e-42, 4.93e-42, 2.09e-42, 1.00e-42],
@@ -115,10 +115,10 @@ minerva_cov = array([
     [1.941265e-79,2.471540e-79,2.520447e-79,2.247417e-79,1.952171e-79,1.909539e-79,2.379406e-79,3.254315e-79,4.605253e-79,4.898404e-79,5.519849e-79,5.882107e-79],
     [-1.288537e-79,1.271173e-79,1.699918e-79,2.322281e-79,3.302760e-79,3.896053e-79,4.469518e-79,4.747785e-79,5.664493e-79,5.993116e-79,5.882107e-79,9.890803e-79]
     ])
-    
+
 cov_inv = inv(minerva_cov)
 
-    
+
 ## create the 2d array of miniBooNE data for the double fifferential cross section ##
 Miniboone_XS = array([[289.2,348.7,418.3,497.6,600.2,692.3,778.1,557.5,891.8,919.3,1003.0,1007.0,992.3,910.2,871.9,765.6,681.9,553.6,401.9,190.0],
     [15.18,25.82,44.84,85.80,135.2,202.2,292.1,401.6,503.3,686.6,813.1,970.2,1148.0,1157.0,1279.0,1233.0,1222.0,981.1,780.6,326.5],
@@ -197,8 +197,8 @@ elif M_A == 1.05:
     col = 'green'
 elif M_A == 1.45:
     col = 'cyan'
-    
-    
+
+
 #M_A_minerva = 1.45
 col = 'cyan'
 
@@ -214,7 +214,7 @@ minerva_chi_sq,minerva_tot_chi_sq =  calc_chi_squared(double_diff_minerva, Miner
 #minerva_unc = make2d(p_P_1D,p_T_1D,minerva_unc)
 
 length_minerva  =  len(Minerva_ddxs_true.ravel()) - 1
-length_miniboone  =  137 - 1 
+length_miniboone  =  137 - 1
 
 #print ("Uncertainty  for minerva is:  %s " % minerva_unc)
 #print(minerva_chi_sq)
@@ -280,6 +280,6 @@ for i in range(len(p_P_1D)):
     for j in range(len(p_T_1D)):
         g.write("%s      %s      %s      %s      %s      %s \n" % (p_T_2D[i,j],p_P_2D[i,j],Minerva_ddxs[i,j],round_sig(double_diff_minerva[i*len(p_T_1D)+j]),Minerva_Error[i,j],round_sig(minerva_chi_sq[i*len(p_T_1D)+j])))
 g.close()
- 
+
 
 plt.show()

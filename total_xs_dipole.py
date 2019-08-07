@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from numpy import array,logspace,longdouble,log,log10
-from XSFunctions import *
+from xs_functions_dipole import *
 import datetime
 from math import log
 

@@ -2,11 +2,11 @@
 
 import time
 import matplotlib.pyplot as plt
-from numpy import array,diag,sqrt,linspace 
+from numpy import array,diag,sqrt,linspace
 from scipy.optimize import curve_fit
-from XSFunctions import make_single_diff,round_sig 
- 
-start_time = time.time() 
+from xs_functions_dipole import make_single_diff,round_sig
+
+start_time = time.time()
 
 ######################################################
 ## Miniboone Single differential cross section data ##
@@ -30,10 +30,10 @@ single_diff_2 = make_single_diff(Q2,popt[0])
 
 print single_diff
 
-fig_SIGMA_BAR = plt.figure()    
+fig_SIGMA_BAR = plt.figure()
 SIGMA_graph_BAR = fig_SIGMA_BAR.gca()
-SIGMA_graph_BAR.set_xlabel(r'$Q^2$ ($GeV$)') 
-SIGMA_graph_BAR.set_ylabel(r'$\frac{d\sigma}{dQ^2}$ ($cm^2$)') 
+SIGMA_graph_BAR.set_xlabel(r'$Q^2$ ($GeV$)')
+SIGMA_graph_BAR.set_ylabel(r'$\frac{d\sigma}{dQ^2}$ ($cm^2$)')
 SIGMA_graph_BAR.plot(Q2,single_diff,linestyle='-',linewidth=2,color='red',label='Normalization Factor = 1')
 SIGMA_graph_BAR.plot(Q2,single_diff_2,linestyle='-',linewidth=2,color='blue',label='Normalization Factor = %s ' % round_sig(popt[0]))
 SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,color='black',fmt='o',label='MiniBooNE Data')
@@ -44,15 +44,8 @@ SIGMA_graph_BAR.set_title(r'Neutrino Single Differential Cross Section')
 SIGMA_graph_BAR.set_xlim(0.0,2.0)
 SIGMA_graph_BAR.set_ylim(0.0,35.0*10**(-39))
 
-fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/Single_XS_MA1.35GeV.pdf" ) 
+fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/Single_XS_MA1.35GeV.pdf" )
 
 plt.show()
 
 print("Time taken = %s seconds" % (time.time() - start_time))
-
-
-
-
-
-
-

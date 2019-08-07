@@ -8,7 +8,7 @@ from scipy.integrate import quad
 from sys import exit
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-from XSFunctions import *
+from xs_functions_dipole import *
 from misc_fns import *
 from variable_fns import *
 
