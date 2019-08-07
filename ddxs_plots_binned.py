@@ -170,7 +170,7 @@ p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
 p_T_1D = array((p_T_1D_high + p_T_1D_high)/2.)
 p_P_1D = array((p_P_1D_high + p_P_1D_high)/2.)
 
-Q2_maxes = [0.2,0.4,0.6,1.,1.5,2.,2.5,3.5,7.5]
+Q2_maxes = [0.5,1.,2.,4.,7.5]
 
 ## some  parameters ##
 m_mu = .1057
