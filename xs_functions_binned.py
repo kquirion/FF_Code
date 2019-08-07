@@ -61,38 +61,135 @@ def make_double_diff_Q2max(E_mu,E_nu,P_mu,cos_mu,M_A,upper):
     V_ud = 0.9742                                           # Mixing element for up and down quarks
     GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
     G_F = 1.166*10**(-5)                                    # Fermi Constant
+    num_flux = 200
+    N = 50
 
-    ## fill in the Q^2 = -q^2 values ##
-    Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
-    ## fill in values of the W Boson Energy ##
-    w = E_nu - E_mu
-    ## fill in the values of the W boson energy ##
-    w_eff = w - E_b
-    ## fill in the values for the 3-momentum of the Boson ##
-    q = sqrt(Q2 + sq(w))
-    ## calculate the a elements ##
-    a_1,a_2,a_3,a_4,a_5,a_6,a_7 = make_a_elements(Q2,q,w,w_eff)
-    ## calculate the form factors ##
-    F_1,F_2,F_A,F_P = make_form_factors_dipole(Q2,M_A)
+        ## Mass of the muon in GeV and angle  cut in degrees ##
+    m_mu = .1057
+    angle_cut = 20.
+    
+    Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
+        .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
+    Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
+        .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
+    Flux_minerva = Flux_FHC + Flux_RHC
 
-    ## Use the Form Factors to Define the H Elements ##
-    H_1 = 8.0*sq(m_N)*sq(F_A) + 2.0*Q2*(sq(F_1 + F_2) + sq(F_A))
-    H_2 = 8.0*m_N**2*(sq(F_1) + sq(F_A)) + 2.0*Q2*sq(F_2)
-    H_3 = -16.0*sq(m_N)*F_A*(F_1 + F_2)
-    H_4 = Q2/2.0*(sq(F_2) + 4.0*sq(F_P)) - 2.0*sq(m_N)*sq(F_2) - 4.0*sq(m_N)*(F_1*F_2 + 2.0*F_A*F_P)
-    H_5 = 8.0*sq(m_N)*(sq(F_1) + sq(F_A)) + 2.0*Q2*sq(F_2)
+    ## Lower edges of the bins ##
+    #p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+    p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
+    p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
+    ## higher edges of the bins ##
+    #p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
+    p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+    p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
+    ## middle of each bin ##
+    p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
+    p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
 
-    ## Use the a and H values to determine the W values ##
-    W_1 = a_1*H_1 + 0.5*(a_2 - a_3)*H_2
-    W_2 = (a_4 + (sq(w)/sq(q))*a_3 - 2.0*(w/q)*a_5 + 0.5*((1-(sq(w)/sq(q)))*(a_2-a_3)))*H_2
-    W_3 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_3
-    W_4 = (sq(m_T)/sq(m_N))*(a_1*H_4 + m_N*(a_6*H_5)/q + (sq(m_N)/2.0)*((3.0*a_3 - a_2)*H_2)/sq(q))
-    W_5 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_5 + m_T*(2.0*a_5 + (w/q)*(a_2 - 3.0*a_3))*(H_2/q)
+    len_pt = len(p_T_1D)
+    len_pp = len(p_P_1D)
+    
+    ## Number of bins to average  the ddxs over ##
+    p_T_1d = array([linspace(p_T_1D_low[i],p_T_1D_high[i],N) for i in range(len_pt)])
+    p_P_1d = array([linspace(p_P_1D_low[i],p_P_1D_high[i],N) for i in range(len_pp)])
+    
+    ## Interpolate the flux data ##
+    Flux = Flux_minerva
+    E_nu_Flux = linspace(0.,20.,len(Flux))
+    Func = interp1d(E_nu_Flux,Flux,kind='cubic')
+    E_nu_new = linspace(0.,20.,num_flux)
+    Flux_new = Func(E_nu_new)
 
-    double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.0*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
-    double_diff = where(upper >= Q2, double_diff, 0.)
+    Total_Flux = 0
+    for i in range(len(Flux_new)):
+        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
 
-    return double_diff
+    ## Define the weight functions needed to integrate over the flux ##
+    weight = []
+    for i in range(len(Flux_new)):
+        weight.append( (20./num_flux)*Flux_new[i]/Total_Flux)
+
+    ## an array to hold the different ddxs arrays to be averaged over ##
+    ddxs_holder = zeros((N,len_pp*len_pt))
+    
+    ###############################################
+    ## define the kinematic inputs for each case ##
+    ###############################################
+    for o in range(N):
+        p_P_2D,p_T_2D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],indexing='ij')
+        cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
+        T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
+        E_mu_2D = T_mu_2D + m_mu
+        P_mu_2D = sqrt(sq(p_T_2D) + sq(p_P_2D))
+        Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
+    
+        p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],E_nu_new,indexing = 'ij')
+        T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
+        cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
+        E_mu_3D = T_mu_3D + m_mu
+        P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
+    
+        weight = broadcast_to(weight,(len_pp,len_pt,len(Flux_new)))
+    
+        ######################################################
+        ## make double diff from fit to total cross section ##
+        ######################################################
+        double_diff = make_double_diff_dipole(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,1)
+    
+        #######################################################################
+        ## find the bounds on the indices where the cross section is nonzero ##
+        #######################################################################
+        a = empty([len_pp,len_pt], dtype=int)
+        b = empty([len_pp,len_pt],dtype=int)
+        for i in range(len_pp):
+            for j in range(len_pt):
+                A = 0
+                B = num_flux-1
+                while double_diff[i,j,A] == 0.:
+                    A += 1
+                    if A ==  num_flux:
+                        break
+                while  double_diff[i,j,B] == 0. :
+                    B -= 1
+                    if B == 0:
+                        break
+                a[i,j] = A-1
+                b[i,j] = B+1
+        b = where( b == num_flux, num_flux-1, b)
+    
+        ## Find new ranges of flux for each combo of p_T and p_|| ##
+        even_newer_E_nu = empty([len_pp,len_pt,num_flux])
+        for i in range(len_pp):
+            for j in range(len_pt):
+                temp_flux = linspace(E_nu_new[a[i,j]],E_nu_new[b[i,j]],num_flux)
+                for k in range(num_flux):
+                    even_newer_E_nu[i,j,k] = temp_flux[k]
+        ## Create new weight funcntions for each combo of p_T and p_|| ##
+        newer_flux_new = Func(even_newer_E_nu)
+        new_weights = empty([len_pp,len_pt,num_flux])
+        for i in range(len_pp):
+            for j in range(len_pt):
+                temp_max = amax(even_newer_E_nu[i,j])
+                temp_min = amin(even_newer_E_nu[i,j])
+                for k in range(num_flux):
+                    new_weights[i,j,k] = ((temp_max-temp_min)/num_flux)*(newer_flux_new[i,j,k]/Total_Flux)
+    
+        double_diff = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,M_A,1)
+        Q2 = 2.0*E_mu_3D*E_nu_3D - 2.0*E_nu_3D*P_mu_3D*cos_mu_3D - m_mu**2
+        double_diff = where(Q2 <= upper, double_diff,0.)
+        double_diff_temp = weight_sum_3d(double_diff.real,new_weights)/12.
+        double_diff_temp = where(cos_mu_2D < cos(angle_cut*pi/180), 0., double_diff_temp)
+        double_diff_temp  = double_diff_temp*Jac
+        double_diff_temp = double_diff_temp.ravel()
+        for i in range(len_pp):
+            for j in range(len_pt):
+                ddxs_holder[o][i*len_pt+j] = double_diff_temp[i*len_pt+j]
+    
+    ddxs_avg = array(sum(ddxs_holder,0)/N)
+   
+    
+    return ddxs_avg
+
 
 ##############################################
 ## Create double differential cross section ##

@@ -8,8 +8,10 @@ from sys import exit
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from xs_functions_dipole import *
+from xs_functions_binned import *
 from misc_fns import *
 from variable_fns import *
+from mpl_toolkits.mplot3d import Axes3D
 
 set_printoptions(precision=3)
 
@@ -168,7 +170,7 @@ p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
 p_T_1D = array((p_T_1D_high + p_T_1D_high)/2.)
 p_P_1D = array((p_P_1D_high + p_P_1D_high)/2.)
 
-Q2_maxes = [0.2,0.4,0.6,1.,1.5,2.,2.5,3.5,7.5,15.]
+Q2_maxes = [0.2,0.4,0.6,1.,1.5,2.,2.5,3.5,7.5]
 
 ## some  parameters ##
 m_mu = .1057
@@ -181,6 +183,8 @@ T_mu_1D = linspace(0.25,1.95,18,endpoint=True)
 cos_mu_1D = linspace(-.95,.95,20,endpoint=True)
 E_nu_1D = linspace(0.05, (60)/20.0,60,endpoint=True)
 T_mu,cos_mu,E_nu = meshgrid(T_mu_1D,cos_mu_1D,E_nu_1D,indexing='ij')
+E_mu = T_mu + m_mu
+P_mu = sqrt(sq(E_mu)-sq(m_mu))
 
 M_A = 1.35
 
@@ -188,11 +192,6 @@ E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
 
 ## recreate the cross section with new E_nu values from interpolation ##
-p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
-T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
-Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
-
 p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1D,p_T_1D,E_nu_new,indexing = 'ij')
 T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
 cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
@@ -218,14 +217,15 @@ ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
 x,y = meshgrid(p_P_1D,p_T_1D,indexing='ij')
 ax1.scatter(x,y,Minerva_ddxs_true,color='black',marker='s',label="Minerva Neutrino Data",depthshade=False)
 for i in range(len(Q2_maxes)):
-    ddxs_temp = make_ddxs_Q2max(E_mu,E_nu,P_mu,cos_mu,M_A,Q2_maxes[i])
+    ddxs_temp = make_double_diff_Q2max(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,Q2_maxes[i])
     p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
     cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
     T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
     Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
-    ax1.scatter(x,y,ddxs_temp,color=col,marker='s',label=r"$Q^2_{max} = $ %s " % Q2_maxxes[i])
-ax1.legend(loc=(0.35,0.7))
-figax1.savefig("Desktop/Research/Axial FF/Plots/Minerva_ddxs_binned.pdf" % round_sig(M_A_minerva) )
+    ddxs_temp = make2d((p_P_1D_high+p_P_1D_low)/2.,(p_T_1D_high+p_T_1D_low)/2.,ddxs_temp)
+    ax1.scatter(x,y,ddxs_temp,marker='s',label=r"$Q^2_{max} = $ %s " % Q2_maxes[i])
+ax1.legend(loc='best')
+figax1.savefig("Desktop/Research/Axial FF/Plots/Minerva_ddxs_binned.pdf" )
 
 #x2,y2 = meshgrid(T_mu_1D,cos_mu_1D,indexing='ij')
 #ax2.scatter(x2,y2,double_diff_miniboone,color=col,marker='s',label="RFG Model: M_A = %s GeV" % round_sig(M_A_miniboone))
