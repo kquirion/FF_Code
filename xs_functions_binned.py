@@ -48,9 +48,54 @@ def make_variables_unbinned(N_T,N_cos,E_nu):
 
     return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
 
+#############################################
+## create truncated ddxs given a maximum Q2##
+#############################################
+def make_double_diff_Q2max(E_mu,E_nu,P_mu,cos_mu,M_A,upper):
+    ## parameters ##
+    A = 12                                                  # number of Nucleons
+    m_N = 0.9389                                            # mass of the Nucleon
+    E_b = 0.025                                             # binding energy GeV
+    m_T = A*(m_N-E_b)                                       # mass of target Nucleus
+    m_mu = 0.1057                                           # mass of Muon GeV
+    V_ud = 0.9742                                           # Mixing element for up and down quarks
+    GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
+    G_F = 1.166*10**(-5)                                    # Fermi Constant
+
+    ## fill in the Q^2 = -q^2 values ##
+    Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
+    ## fill in values of the W Boson Energy ##
+    w = E_nu - E_mu
+    ## fill in the values of the W boson energy ##
+    w_eff = w - E_b
+    ## fill in the values for the 3-momentum of the Boson ##
+    q = sqrt(Q2 + sq(w))
+    ## calculate the a elements ##
+    a_1,a_2,a_3,a_4,a_5,a_6,a_7 = make_a_elements(Q2,q,w,w_eff)
+    ## calculate the form factors ##
+    F_1,F_2,F_A,F_P = make_form_factors_dipole(Q2,M_A)
+
+    ## Use the Form Factors to Define the H Elements ##
+    H_1 = 8.0*sq(m_N)*sq(F_A) + 2.0*Q2*(sq(F_1 + F_2) + sq(F_A))
+    H_2 = 8.0*m_N**2*(sq(F_1) + sq(F_A)) + 2.0*Q2*sq(F_2)
+    H_3 = -16.0*sq(m_N)*F_A*(F_1 + F_2)
+    H_4 = Q2/2.0*(sq(F_2) + 4.0*sq(F_P)) - 2.0*sq(m_N)*sq(F_2) - 4.0*sq(m_N)*(F_1*F_2 + 2.0*F_A*F_P)
+    H_5 = 8.0*sq(m_N)*(sq(F_1) + sq(F_A)) + 2.0*Q2*sq(F_2)
+
+    ## Use the a and H values to determine the W values ##
+    W_1 = a_1*H_1 + 0.5*(a_2 - a_3)*H_2
+    W_2 = (a_4 + (sq(w)/sq(q))*a_3 - 2.0*(w/q)*a_5 + 0.5*((1-(sq(w)/sq(q)))*(a_2-a_3)))*H_2
+    W_3 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_3
+    W_4 = (sq(m_T)/sq(m_N))*(a_1*H_4 + m_N*(a_6*H_5)/q + (sq(m_N)/2.0)*((3.0*a_3 - a_2)*H_2)/sq(q))
+    W_5 = (m_T/m_N)*(a_7 - (w/q)*a_6)*H_5 + m_T*(2.0*a_5 + (w/q)*(a_2 - 3.0*a_3))*(H_2/q)
+
+    double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.0*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
+    double_diff = where(upper >= Q2, double_diff, 0.)
+
+    return double_diff
+
 ##############################################
 ## Create double differential cross section ##
-### opt = 1 neutrino, opt = 2 antineutrino ###
 ##############################################
 def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     ## parameters ##
@@ -122,7 +167,7 @@ def make_total_xs_binned(E_nu,M_A):
     A_Miniboone_XData = array([.425,.475,.525,.575,.625,.675,.725,.775,.85,.95,1.05,1.2,1.4,1.75])
     A_Miniboone_XS = array([1.808,1.89,2.019,2.258,2.501,2.728,2.932,3.091,3.372,3.815,4.254,4.789,5.784,7.086])*10**(-39)
     A_Miniboone_Error = array([6.267,4.471,4.433,4.384,4.335,4.559,4.39,4.56,4.821,5.663,6.704,9.831,17.42,31.26])*10**(-40)
-    
+
     m_mu = 0.1057
     E_nu_array = E_nu
     N = len(E_nu_array)
@@ -135,7 +180,7 @@ def make_total_xs_binned(E_nu,M_A):
     num_Q2 = len(bin_edges)
     E_low  = -1.
     E_high = log10(20.)
-    
+
     SIGMA_TOT = zeros(200)
     y = []
     y_labels = []
@@ -178,7 +223,7 @@ def make_total_xs_binned(E_nu,M_A):
                 ## Add to total value of SIGMA ##
                 #################################
                 SIGMA[m] = SIGMA[m]+SIGMA_Temp
-               
+
         ###############################################
         ## plot the contribution of  each Q^2  range ##
         ###############################################
@@ -194,9 +239,9 @@ def make_total_xs_binned(E_nu,M_A):
         y_labels.append(r"%s < $Q^2$ < %s " % (bin_edges[k],bin_edges[k+1]))
         SIGMA_TOT  = SIGMA_TOT + SIGMA_new
         k += 1
-        
+
     #SIGMA_old = make_total_xs_dipole(E_nu_array,M_A)
-    
+
     fig = plt.figure()
     SIGMA_graph = fig.gca()
     SIGMA_graph.set_xlabel(r'$E_{\nu}$ ($GeV$)')
@@ -205,14 +250,14 @@ def make_total_xs_binned(E_nu,M_A):
     SIGMA_graph.set_xlim(0.1,20.0)
     SIGMA_graph.set_ylim(0.0,2.0*10**(-38))
     SIGMA_graph.set_xscale('log')
-    
+
     if M_A == 1.05:
         col = 'green'
     elif M_A == 1.35:
         col = 'red'
     elif M_A ==  1.45:
         col =  'cyan'
-                  
+
     SIGMA_graph.stackplot(newer_E_nu,y,linestyle='-',linewidth=2,labels=y_labels)
     SIGMA_graph.plot(newer_E_nu,SIGMA_TOT,color=col,linestyle='-')
     SIGMA_graph.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
