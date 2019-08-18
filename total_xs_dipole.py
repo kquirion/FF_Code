@@ -40,7 +40,7 @@ A_Miniboone_Error = array([6.267,4.471,4.433,4.384,4.335,4.559,4.39,4.56,4.821,5
 
 num_SIGMA = 30
 E_low  = -1.
-E_high = log10(20.)
+E_high = log10(2.)
 new_E_nu = logspace(E_low,E_high,num_SIGMA)
 
 
@@ -85,14 +85,14 @@ SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new,linestyle='-',linewidth=2,color='g
 SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_2,linestyle='-',linewidth=2,color='red',label=r'$M_A = %s GeV$' % M_A_2)
 #SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_3,linestyle='-',linewidth=2,color='orange',label=r'$M_A = %s GeV$' % M_A_3)
 #SIGMA_graph_BAR.semilogx(newer_E_nu,SIGMA_new_4,linestyle='-',linewidth=2,color='cyan',label=r'$M_A = %s GeV$' % M_A_4)
-SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
-#SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
+#SIGMA_graph_BAR.errorbar(Minerva_XData,Minerva_XS,yerr=Minerva_Error,marker='s',color='m',fmt='o',label='Minerva XS')
+SIGMA_graph_BAR.errorbar(Miniboone_XData,Miniboone_XS,yerr=Miniboone_Error,marker='s',color='black',fmt='o',label='Miniboone XS')
 SIGMA_graph_BAR.errorbar(Nomad_XData,Nomad_XS,yerr=Nomad_Error,marker='s',color='grey',fmt='o',label='Nomad XS')
 SIGMA_graph_BAR.legend(loc=(0.05,0.60))
-SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section $\theta < 20^o$')
+SIGMA_graph_BAR.set_title(r'Neutrino $^{12}C$ Cross Section')
 SIGMA_graph_BAR.set_xlim(0.1,20.0)
 SIGMA_graph_BAR.set_ylim(0.0,2.*10**(-38))
 
 plt.show()
 print("--- %s Minutes Until Finish" % ((time.time() - start_time)/60.0))
-fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/total_xs_minerva.pdf" )
+fig_SIGMA_BAR.savefig("Desktop/Research/Axial FF/Plots/total_xs_miniboone_only.pdf" )

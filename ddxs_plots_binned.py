@@ -1,7 +1,7 @@
 ## here  we will show the Q^2 binned  plot of the  ddxs ##
 
 from math import log10, floor
-from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,vstack,hstack
+from numpy import array,linspace,longdouble,where,transpose,sqrt,broadcast_to,nonzero,swapaxes,log,power,nanmin,nanmax,conjugate,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,inf,vstack,hstack
 from math import pi
 from scipy.integrate import quad
 from sys import exit
@@ -14,6 +14,21 @@ from variable_fns import *
 from mpl_toolkits.mplot3d import Axes3D
 
 set_printoptions(precision=3)
+
+Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
+        .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
+#Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
+       # .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
+#Flux_minerva = Flux_FHC + Flux_RHC
+num_flux = 200
+Flux_minerva = Flux_FHC
+Flux = Flux_minerva
+E_nu_Flux = linspace(0.,20.,len(Flux))
+Func = interp1d(E_nu_Flux,Flux,kind='cubic')
+E_nu_new = linspace(0.,20.,num_flux)
+Flux_new = Func(E_nu_new)
+
+
 
 #################################################
 ## Define the info needed for flux integration ##
@@ -167,14 +182,19 @@ p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
 p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
 p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
 ## middle of each bin ##
-p_T_1D = array((p_T_1D_high + p_T_1D_high)/2.)
-p_P_1D = array((p_P_1D_high + p_P_1D_high)/2.)
+p_T_1D = array((p_T_1D_low + p_T_1D_high)/2.)
+p_P_1D = array((p_P_1D_low + p_P_1D_high)/2.)
+len_pp = len(p_P_1D)
+len_pt = len(p_T_1D)
 
-Q2_maxes = [0.5,1.,2.,4.,7.5]
+Q2_bins = [0.5,1.,2.,4.,7.5,10.,15.,20.]
+y_labels = []
+for i in range(len(Q2_bins)-1):
+    y_labels.append(r"%s < $Q^2$ < %s " % (Q2_bins[i],Q2_bins[i+1]))
 
 ## some  parameters ##
 m_mu = .1057
-N = 150
+N = 10
 num_flux = 200
 
 
@@ -186,7 +206,7 @@ T_mu,cos_mu,E_nu = meshgrid(T_mu_1D,cos_mu_1D,E_nu_1D,indexing='ij')
 E_mu = T_mu + m_mu
 P_mu = sqrt(sq(E_mu)-sq(m_mu))
 
-M_A = 1.35
+M_A = 1.32
 
 E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
@@ -199,39 +219,38 @@ E_mu_3D = T_mu_3D + m_mu
 P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
 
 ## Create the plot for the double differential cross section ##
-figax1 = plt.figure()
-#figax2 = plt.figure()
+ddxs_temp = flux_interpolate_binned((N,num_flux),M_A,Q2_bins)
+ddxs_sum = sum(ddxs_temp,0)
+ddxs_sum = make2d(p_P_1D,p_T_1D,ddxs_sum)
+p_P,p_T = meshgrid(p_P_1D,p_T_1D,indexing='ij')
 
+figax1 = plt.figure()
 ax1 = figax1.gca(projection='3d')
 ax1.set_xlabel(r"$p_P$ (GeV)")
 ax1.set_ylabel('$p_T$ (GeV)')
 ax1.set_zlabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} $")
 ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
-
-#ax2 = figax2.gca(projection='3d')
-#ax2.set_xlabel(r"$T_{\mu}$ (GeV)")
-#ax2.set_ylabel('$cos\theta_\mu$ ')
-#ax2.set_zlabel(r"$\frac{d\sigma}{dT_\mu \, dcos\theta_\mu} $")
-#ax2.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
-
-x,y = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-ax1.scatter(x,y,Minerva_ddxs_true,color='black',marker='s',label="Minerva Neutrino Data",depthshade=False)
-for i in range(len(Q2_maxes)):
-    ddxs_temp = make_double_diff_Q2max(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,Q2_maxes[i])
-    p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-    cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
-    T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
-    Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
-    ddxs_temp = make2d((p_P_1D_high+p_P_1D_low)/2.,(p_T_1D_high+p_T_1D_low)/2.,ddxs_temp)
-    ax1.scatter(x,y,ddxs_temp,marker='s',label=r"$Q^2_{max} = $ %s " % Q2_maxes[i])
-ax1.legend(loc='best')
-figax1.savefig("Desktop/Research/Axial FF/Plots/Minerva_ddxs_binned.pdf" )
-
-#x2,y2 = meshgrid(T_mu_1D,cos_mu_1D,indexing='ij')
-#ax2.scatter(x2,y2,double_diff_miniboone,color=col,marker='s',label="RFG Model: M_A = %s GeV" % round_sig(M_A_miniboone))
-#ax2.scatter(x2,y2,Miniboone_XS,color='black',marker='s',label="Miniboone Neutrino Data",depthshade=False)
-#ax2.legend(loc=(0.52,0.65))
-
-
-
+ax1.scatter(p_P,p_T,ddxs_sum)
+ax1.scatter(p_P,p_T,Minerva_ddxs_true)
 plt.show()
+
+#ddxs_temp = make2d(p_P_1D,p_T_1D,ddxs_temp)
+for j in range(len_pt):
+    dsigma = zeros((len(Q2_bins)-1,12))
+    for q in range(len(Q2_bins)-1):
+        for i in range(len_pp):
+            dsigma[q,i] = ddxs_temp[q,i*len_pp+j]
+    temp_str = "ax" + "%s" % j
+    figax1 = plt.figure()
+    temp_str = figax1.gca()
+    temp_str.set_xlabel(r"$p_P$ (GeV)")
+    temp_str.set_ylabel(r"$\frac{d\sigma}{dP_{||}} $")
+    temp_str.set_title(r'Double Differential Cross Section $(cm^2/GeV^2), \,\, $')
+    temp_str.set_ylim(0.,1.25*amax(Minerva_ddxs_true))
+    print dsigma
+    temp_str.stackplot(p_P_1D,dsigma,labels=y_labels)
+    temp_str.scatter(p_P_1D,Minerva_ddxs_true[:,j],color='black',marker='s',label=r"Minerva Neutrino Data, $p_T=$ %s GeV" % p_T_1D[j])
+    temp_str.legend(loc='best')
+    figax1.savefig("Desktop/Research/Axial FF/Plots/Stacked DDXS/Minerva_ddxs_binned_pt_%s.pdf" % p_T_1D[j])
+
+

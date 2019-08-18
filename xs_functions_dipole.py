@@ -568,7 +568,7 @@ def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     V_ud = 0.9742                                           # Mixing element for up and down quarks
     GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
     G_F = 1.166*10**(-5)                                    # Fermi Constant
-
+    
     ## fill in the Q^2 = -q^2 values ##
     Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
     ## fill in values of the W Boson Energy ##
@@ -603,8 +603,8 @@ def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     else:
         print("Please Enter 1 for neutrino or 2 for antineutrino in the last argument of make_double_diff_dipole")
         exit()
-    double_diff = where(Q2 > 30., 0., double_diff)
-    double_diff = where(cos_mu < cos(20.*pi/180), 0., double_diff)
+    #double_diff = where(Q2 > 30., 0., double_diff)
+    #double_diff = where(cos_mu < cos(20.*pi/180), 0., double_diff)
     return double_diff
 
 ##################################################################################

@@ -48,6 +48,7 @@ def calc_chi_squared(Theo,Exp,Exp_err):
 ##################################################################################
 def weight_sum_3d(vector,weight):
     a = vector.shape
+    b = weight.shape
     x = a[0]
     y = a[1]
     z = a[2]
