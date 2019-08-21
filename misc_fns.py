@@ -68,7 +68,7 @@ def weight_sum_2d(vector,weight):
     output = array([0.0 for i in range(x)])
     for j in range(x):
         Int = 0
-        for k in range(y-1):
-            Int = Int + 0.5*(weight[j][k]*vector[j][k] + weight[j][k+1]*vector[j][k+1] )
+        for k in range(y):
+            Int = Int + (weight[j][k]*vector[j][k] )
         output[j] = Int
     return output

@@ -12,6 +12,7 @@ from xs_functions_binned import *
 from misc_fns import *
 from variable_fns import *
 from mpl_toolkits.mplot3d import Axes3D
+from numpy.linalg import inv
 
 set_printoptions(precision=3)
 
@@ -184,73 +185,42 @@ p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
 ## middle of each bin ##
 p_T_1D = array((p_T_1D_low + p_T_1D_high)/2.)
 p_P_1D = array((p_P_1D_low + p_P_1D_high)/2.)
+
 len_pp = len(p_P_1D)
 len_pt = len(p_T_1D)
 
-Q2_bins = [0.5,1.,2.,4.,7.5,10.,15.,20.]
+Q2_bins = [-.1,0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
 y_labels = []
 for i in range(len(Q2_bins)-1):
-    y_labels.append(r"%s < $Q^2$ < %s " % (Q2_bins[i],Q2_bins[i+1]))
+    y_labels.append(r"%s < $Q^2$ < %s GeV$^2$" % (Q2_bins[i],Q2_bins[i+1]))
 
 ## some  parameters ##
 m_mu = .1057
-N = 10
-num_flux = 200
-
-
-## Miniboone Kinematic variables ##
-T_mu_1D = linspace(0.25,1.95,18,endpoint=True)
-cos_mu_1D = linspace(-.95,.95,20,endpoint=True)
-E_nu_1D = linspace(0.05, (60)/20.0,60,endpoint=True)
-T_mu,cos_mu,E_nu = meshgrid(T_mu_1D,cos_mu_1D,E_nu_1D,indexing='ij')
-E_mu = T_mu + m_mu
-P_mu = sqrt(sq(E_mu)-sq(m_mu))
-
+N = 100
+num_flux = 320
+p = 3
 M_A = 1.32
-
+p_P_1D_smooth =  linspace(0.1,20.,p*N)
 E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
 
-## recreate the cross section with new E_nu values from interpolation ##
-p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1D,p_T_1D,E_nu_new,indexing = 'ij')
-T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
-cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
-E_mu_3D = T_mu_3D + m_mu
-P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
-
-## Create the plot for the double differential cross section ##
-ddxs_temp = flux_interpolate_binned((N,num_flux),M_A,Q2_bins)
-ddxs_sum = sum(ddxs_temp,0)
-ddxs_sum = make2d(p_P_1D,p_T_1D,ddxs_sum)
-p_P,p_T = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-
-figax1 = plt.figure()
-ax1 = figax1.gca(projection='3d')
-ax1.set_xlabel(r"$p_P$ (GeV)")
-ax1.set_ylabel('$p_T$ (GeV)')
-ax1.set_zlabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} $")
-ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
-ax1.scatter(p_P,p_T,ddxs_sum)
-ax1.scatter(p_P,p_T,Minerva_ddxs_true)
-plt.show()
-
-#ddxs_temp = make2d(p_P_1D,p_T_1D,ddxs_temp)
-for j in range(len_pt):
-    dsigma = zeros((len(Q2_bins)-1,12))
-    for q in range(len(Q2_bins)-1):
-        for i in range(len_pp):
-            dsigma[q,i] = ddxs_temp[q,i*len_pp+j]
-    temp_str = "ax" + "%s" % j
-    figax1 = plt.figure()
-    temp_str = figax1.gca()
-    temp_str.set_xlabel(r"$p_P$ (GeV)")
-    temp_str.set_ylabel(r"$\frac{d\sigma}{dP_{||}} $")
-    temp_str.set_title(r'Double Differential Cross Section $(cm^2/GeV^2), \,\, $')
-    temp_str.set_ylim(0.,1.25*amax(Minerva_ddxs_true))
-    print dsigma
-    temp_str.stackplot(p_P_1D,dsigma,labels=y_labels)
-    temp_str.scatter(p_P_1D,Minerva_ddxs_true[:,j],color='black',marker='s',label=r"Minerva Neutrino Data, $p_T=$ %s GeV" % p_T_1D[j])
-    temp_str.legend(loc='best')
-    figax1.savefig("Desktop/Research/Axial FF/Plots/Stacked DDXS/Minerva_ddxs_binned_pt_%s.pdf" % p_T_1D[j])
-
-
+y = zeros((len(Q2_bins)-1,p*N,len_pt))
+for i in range(len(Q2_bins)-1):
+    double_diff = flux_interpolate_binned((N,num_flux),M_A,Q2_bins[i],Q2_bins[i+1])
+    print "bin %s/%s complete" % (i+1,len(Q2_bins)-1)
+    for j in  range(p*N):
+        for k in range(len_pt):
+            y[i,j,k] = double_diff[j,k]
+for k in range(len_pt):        
+    temp_str = "k"
+    temp_str = plt.figure()
+    ax1 = temp_str.gca()
+    ax1.set_xlabel(r"$p_{||}$ (GeV)")
+    ax1.set_ylabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} \,\, (cm^2/GeV^2) $")
+    ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
+    ax1.errorbar(p_P_1D,Minerva_ddxs_true[:,k],Minerva_Error[:,k],linestyle='None',marker='s',markersize=3.,color='black',label=r'$p_T=%s$ GeV'  % p_T_1D[k] )
+    ax1.set_ylim(amin(Minerva_ddxs_true),1.5*amax(y[:,:,k]))
+    plt.stackplot(p_P_1D_smooth,y[:,:,k],labels=y_labels,alpha=0.7)
+    ax1.legend(loc='best')
+    temp_str.savefig("Desktop/Research/Axial FF/Plots/Stacked DDXS/Minerva_ddxs_pt_%s_test.pdf" % p_T_1D[k] )
+    plt.close()
