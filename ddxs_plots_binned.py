@@ -1,7 +1,7 @@
 ## here  we will show the Q^2 binned  plot of the  ddxs ##
 
 from math import log10, floor
-from numpy import array,linspace,longdouble,where,transpose,sqrt,broadcast_to,nonzero,swapaxes,log,power,nanmin,nanmax,conjugate,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,inf,vstack,hstack
+from numpy import array,linspace,transpose,sqrt,nonzero,log,power,conjugate,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,inf
 from math import pi
 from scipy.integrate import quad
 from sys import exit
@@ -15,20 +15,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from numpy.linalg import inv
 
 set_printoptions(precision=3)
-
-Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
-        .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
-#Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
-       # .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
-#Flux_minerva = Flux_FHC + Flux_RHC
-num_flux = 200
-Flux_minerva = Flux_FHC
-Flux = Flux_minerva
-E_nu_Flux = linspace(0.,20.,len(Flux))
-Func = interp1d(E_nu_Flux,Flux,kind='cubic')
-E_nu_new = linspace(0.,20.,num_flux)
-Flux_new = Func(E_nu_new)
-
 
 
 #################################################
@@ -189,18 +175,18 @@ p_P_1D = array((p_P_1D_low + p_P_1D_high)/2.)
 len_pp = len(p_P_1D)
 len_pt = len(p_T_1D)
 
-Q2_bins = [-.1,0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
+Q2_bins = [0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
 y_labels = []
 for i in range(len(Q2_bins)-1):
     y_labels.append(r"%s < $Q^2$ < %s GeV$^2$" % (Q2_bins[i],Q2_bins[i+1]))
 
 ## some  parameters ##
 m_mu = .1057
-N = 100
-num_flux = 320
-p = 3
+N = 40
+num_flux = 400
+p = 1
 M_A = 1.32
-p_P_1D_smooth =  linspace(0.1,20.,p*N)
+p_P_1D_smooth =  linspace(1.5,20.,p*N)
 E_nu_Flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,200,endpoint=True)
 
@@ -219,7 +205,7 @@ for k in range(len_pt):
     ax1.set_ylabel(r"$\frac{d\sigma}{dP_{||} \, dp_T} \,\, (cm^2/GeV^2) $")
     ax1.set_title(r'Double Differential Cross Section $(cm^2/GeV^2)$')
     ax1.errorbar(p_P_1D,Minerva_ddxs_true[:,k],Minerva_Error[:,k],linestyle='None',marker='s',markersize=3.,color='black',label=r'$p_T=%s$ GeV'  % p_T_1D[k] )
-    ax1.set_ylim(amin(Minerva_ddxs_true),1.5*amax(y[:,:,k]))
+    ax1.set_ylim(amin(Minerva_ddxs_true),3.0*amax(Minerva_ddxs_true[:,k]))
     plt.stackplot(p_P_1D_smooth,y[:,:,k],labels=y_labels,alpha=0.7)
     ax1.legend(loc='best')
     temp_str.savefig("Desktop/Research/Axial FF/Plots/Stacked DDXS/Minerva_ddxs_pt_%s_test.pdf" % p_T_1D[k] )
