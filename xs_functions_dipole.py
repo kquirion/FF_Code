@@ -1,14 +1,10 @@
 ## This file contains many functions for running cross section calculations ##
-from math import log10, floor
-from numpy import (array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,
-                    maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,cos,vstack,set_printoptions)
+from numpy import array,linspace,where,sqrt,broadcast_to,swapaxes,log,power,nanmax,sum,maximum,empty,meshgrid,amin,amax,exp,zeros,cos,set_printoptions
 from math import pi
-from scipy.integrate import quad
 from sys import exit
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-from misc_fns import *
-from variable_fns import *
+from misc_fns import sq,weight_sum_3d,round_sig
+from variable_fns import make_variables
 
 set_printoptions(precision=3)
 
@@ -421,49 +417,6 @@ def make_form_factors_dipole(Q2,M_A):
 
     return F_1,F_2,F_A,F_P
 
-
-#############################
-## Make FFs for dipole fit ##
-#############################
-def make_form_factors_sergi(Q2,M_A,L):
-    m_N = 0.9389                                            # mass of the Nucleon
-    mu_p = 2.793                                            # proton magnetic moment
-    mu_n = -1.913                                           # neutron magnetic moment
-    a2 = [3.253,3.104,3.043,3.226,3.188]                    # coefficient for form factor denominator (see Arrington Table 2)
-    a4 = [1.422,1.428,0.8548,1.508,1.354]
-    a6 = [0.08582,0.1112,0.6806,-0.3773,0.1511]
-    a8 = [0.3318,-0.006981,-0.1287,0.6109,-0.01135]
-    a10 = [-0.09371,0.0003705,0.008912,-0.1853,0.0005330]
-    a12 = [0.01076,-0.7063*10**(-5),0.0,0.01596,-0.9005*10**(-5)]
-    M = m_N                                                 # Mass of the W Boson
-    M_V2 = 0.71                                             # Vector mass parameter
-    M_V_nuance  = 0.84
-    #g_A = -1.269
-    g_A = -1.2723                                            # F_A(q^2 = 0)
-    #g_A = 2.3723                                           # fake parameter for single xs
-    M_pi = 0.1396                                           # mass of the pion
-    a = 0.942
-    b = 4.61
-    tau = Q2/4./sq(m_N)
-
-    #G_D = 1./(1+Q2/sq(M_V_nuance))**2
-    #GEn = -mu_n*(a*tau)/(1.+b*tau)*G_D
-
-    GEp = where(Q2 < 6.0,1.0/(1 + a2[0]*Q2 + a4[0]*sq(Q2) + a6[0]*power(Q2,3) + a8[0]*power(Q2,4) + a10[0]*power(Q2,5) + a12[0]*power(Q2,6)),(mu_p/(1+a2[1]*Q2+a4[1]*sq(Q2)+a6[1]*power(Q2,3)+a8[1]*power(Q2,4)+a10[1]*power(Q2,5)+a12[1]*power(Q2,6))) * (0.5/(1+a2[0]*6.0+a4[0]*6.0**2+a6[0]*6.0**3+a8[0]*6.0**4+a10[0]*6.0**5+a12[0]*6.0**6)) / (0.5*mu_p/(1+a2[1]*6.0+a4[1]*6.0**2+a6[1]*6.0**3+a8[1]*6.0**4+a10[1]*6.0**5+a12[1]*6.0**6)))
-    GMp = mu_p/(1+a2[1]*Q2+a4[1]*sq(Q2)+a6[1]*power(Q2,3)+a8[1]*power(Q2,4)+a10[1]*power(Q2,5)+a12[1]*power(Q2,6))
-    GMn = mu_n/(1+a2[2]*Q2+a4[2]*sq(Q2)+a6[2]*power(Q2,3)+a8[2]*power(Q2,4)+a10[2]*power(Q2,5)+a12[2]*power(Q2,6))
-    GEn = -mu_n*0.942*(Q2/(4*sq(M))) / (1.+(Q2/(4*M**2)*4.61)) * (1./(1. + (sq(Q2)/M_V_nuance**2)))
-    GEV = (GEp - GEn)
-    GMV = (GMp - GMn)
-    ## Create the form factors as a function of Q^2 = -q^2 ##
-    F_1 = (GEV + (Q2/(4.*M**2)*GMV))/(1. + Q2/(4.*sq(M)))
-    F_2 = (GMV - GEV)/((1. + Q2/(4.*M**2)))
-    F_A = g_A / (1. + Q2/sq(M_A)) / (1.+Q2/sq(L))
-    F_P = 2.0*sq(m_N)*F_A/(M_pi**2 + Q2)
-    #F_P = 2.*sq(m_N)/(-Q2)*(g_A/(1+Q2/sq(M_pi)) - F_A)       # from 1972 paper
-
-    return F_1,F_2,F_A,F_P,M_A,L
-
 ## Create the W elements which are used for the double differential cross sextion ##
 def make_double_diff_miniboone(M_A):
     ## parameters ##
@@ -603,8 +556,6 @@ def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     else:
         print("Please Enter 1 for neutrino or 2 for antineutrino in the last argument of make_double_diff_dipole")
         exit()
-    #double_diff = where(Q2 > 30., 0., double_diff)
-    #double_diff = where(cos_mu < cos(20.*pi/180), 0., double_diff)
     return double_diff
 
 ##################################################################################

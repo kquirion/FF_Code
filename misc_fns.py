@@ -1,13 +1,6 @@
 ## misc functions for calculating stuff ##
 
-from math import log10, floor
-from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,cos
-from math import pi
-from scipy.integrate import quad
-from sys import exit
-from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-
+from numpy import array,conjugate,sum,log10,floor
 ###############################################################################
 ## calculates the square of a number, or the element-wise square of an array ##
 ###############################################################################
@@ -57,7 +50,7 @@ def weight_sum_3d(vector,weight):
         for j in range(y):
             Int = 0
             for k in range(z-1):
-                Int = Int + (weight[i][j][k]*vector[i][j][k])
+                Int += (weight[i][j][k]*vector[i][j][k])
             output[i][j] = Int
     return output
 

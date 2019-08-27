@@ -1,20 +1,10 @@
 ## here  we will show the Q^2 binned  plot of the  ddxs ##
 
-from math import log10, floor
-from numpy import array,linspace,transpose,sqrt,nonzero,log,power,conjugate,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,inf
-from math import pi
-from scipy.integrate import quad
-from sys import exit
-from scipy.interpolate import interp1d
+from numpy import array,linspace,transpose,amin,amax,zeros,inf,where,nonzero
 import matplotlib.pyplot as plt
-from xs_functions_dipole import *
-from xs_functions_binned import *
-from misc_fns import *
-from variable_fns import *
-from mpl_toolkits.mplot3d import Axes3D
+from xs_functions_binned import flux_interpolate_binned
 from numpy.linalg import inv
-
-set_printoptions(precision=3)
+from misc_fns import round_sig
 
 
 #################################################
@@ -175,30 +165,38 @@ p_P_1D = array((p_P_1D_low + p_P_1D_high)/2.)
 len_pp = len(p_P_1D)
 len_pt = len(p_T_1D)
 
-Q2_bins = [0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
-y_labels = []
-for i in range(len(Q2_bins)-1):
-    y_labels.append(r"%s < $Q^2$ < %s GeV$^2$" % (Q2_bins[i],Q2_bins[i+1]))
-
 ## some  parameters ##
 m_mu = .1057
-N = 40
-num_flux = 400
-p = 1
+N = 200
+num_flux = 2000
 M_A = 1.32
-p_P_1D_smooth =  linspace(1.5,20.,p*N)
-E_nu_Flux = linspace(0.,20.,40,endpoint=True)
-E_nu_new = linspace(0.,20.,200,endpoint=True)
+p_P_1D_smooth =  linspace(0.1,20.,N)
+E_nu_flux = linspace(0.,20.,40,endpoint=True)
+E_nu_new = linspace(0.,20.,num_flux,endpoint=True)
 
-y = zeros((len(Q2_bins)-1,p*N,len_pt))
+Q2_bins = [0.,0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
+y_labels = []
+y = zeros((len(Q2_bins)-1,N,len_pt))
+
+## create an array for a ddxs for each Q2 range ##
 for i in range(len(Q2_bins)-1):
-    double_diff = flux_interpolate_binned((N,num_flux),M_A,Q2_bins[i],Q2_bins[i+1])
-    print "bin %s/%s complete" % (i+1,len(Q2_bins)-1)
-    for j in  range(p*N):
+    y_labels.append(r"%s < $Q^2$ < %s GeV$^2$" % (Q2_bins[i],Q2_bins[i+1]))
+    Q2,double_diff,double_diff_3D = flux_interpolate_binned((N,num_flux),M_A,Q2_bins[i],Q2_bins[i+1])
+    print "bin %s/%s complete" % (i+1,len(Q2_bins)-1) 
+    for j in  range(N):
         for k in range(len_pt):
             y[i,j,k] = double_diff[j,k]
-for k in range(len_pt):        
-    temp_str = "k"
+
+a,b,c = nonzero(double_diff_3D)
+print a,b,c
+g=open("Desktop/Research/Axial FF/txt files/Q2 values/Q2_values.txt" % p_T_1D[k],"w+")
+g.write("         Q2            E_nu            p_P            p_T            ddxs \n\n")
+for i in range(len(a)):
+    g.write("    %s            %s            %s            %s            %s \n" % (Q2[a[i],b[i],c[i]],E_nu_new[c[i]],p_P_1D_smooth[a[i]],p_T_1D[b[i]],double_diff_3D[a[i],b[i],c[i]]))
+g.close()
+## plot ddxs for each value of transverse momentum ##
+for k in range(len_pt):         
+    temp_str = "%s" % k
     temp_str = plt.figure()
     ax1 = temp_str.gca()
     ax1.set_xlabel(r"$p_{||}$ (GeV)")
