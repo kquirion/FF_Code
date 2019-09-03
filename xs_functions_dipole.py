@@ -676,8 +676,6 @@ def make_single_diff(Q2_passed,N):
         Total_Flux = Total_Flux + (3.-.02)/num_flux*(Flux_new[i])
 
     Q2,E_nu_new = meshgrid(Q2_passed,E_nu_new,indexing='ij')
-
-
     N_Q = len(Q2_passed)
 
     ## Define the weight functions needed to integrate over the flux ##
