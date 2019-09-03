@@ -9,7 +9,7 @@ from variable_fns import make_variables
 set_printoptions(precision=3)
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def flux_interpolate((N,num_flux),M_A):
+def make_ddxs_dipole_smooth((N,num_flux),M_A):
 
     ## Mass of the muon in GeV and angle  cut in degrees ##
     m_mu = .1057
@@ -133,7 +133,7 @@ def flux_interpolate((N,num_flux),M_A):
     return ddxs_avg
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def flux_interpolate_unc((N,num_flux),M_A):
+def make_ddxs_dipole_smooth_unc((N,num_flux),M_A):
 
     ## Mass of the muon in GeV and angle  cut in degrees ##
     m_mu = .1057
@@ -262,6 +262,7 @@ def flux_interpolate_unc((N,num_flux),M_A):
     ddxs_unc = sqrt( (1./N)* sum(sq( resids ),0 ) )
     
     return ddxs_unc
+    
 ###########################
 ## Create the a elements ##
 ###########################
@@ -620,6 +621,7 @@ def make_total_xs_dipole(E_nu,M_A):
             #####################################################################
             #double_diff = make_double_diff_BW(E_mu,E_nu,P_mu,cos_bin,GAMMA,M_A,2)
             double_diff = make_double_diff_dipole(E_mu,E_nu,P_mu,cos_bin,M_A,1)
+            double_diff = where(cos_bin >= cos(20.*pi/180.),double_diff,0.) 
 
             ## apply the angle cut of Minerva ##
             #double_diff = where((arccos(cos_bin)*180/pi <= 20) & (arccos(cos_bin)*180/pi >= -20), double_diff, 0.)

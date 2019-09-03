@@ -2,65 +2,37 @@
 ## Here wehave the functions for checking how total cross section depends on the range of Q^2 being used ##
 
 from math import log10
-from numpy import array,linspace,where,sqrt,broadcast_to,swapaxes,meshgrid,amin,amax,zeros,logspace,cos,longdouble
+from numpy import array,linspace,where,sqrt,broadcast_to,swapaxes,meshgrid,amin,amax,zeros,logspace,cos,longdouble,nonzero,inf
 from math import pi
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from xs_functions_dipole import make_a_elements,make_form_factors_dipole,calc_cross_section,make_double_diff_dipole
 from misc_fns import weight_sum_3d,sq,round_sig
-from variable_fns import make_variables
-
-########################################################################
-## Create a function to make the less constrained kinematic variables ##
-########################################################################
-def make_variables_unbinned(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_min = 0.05
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    DELTA_T_mu = (T_mu_max-T_mu_min)/N_T
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
-    ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-    #cos_max = 20.*pi/180.
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = array([linspace(-cos_max,cos_max,2*N_cos,endpoint=False) for i in range(N_T)])
-
-    DELTA_cos_mu = array([0.0  for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(2*N_cos,N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(2*N_cos,N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(2*N_cos,N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
+from variable_fns import make_variables,make_variables_unbinned,make_variables_3D
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
 def flux_interpolate_binned((N,num_flux),M_A,lower,upper):
     
+    ## Lower edges of the bins ##
+    #p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+    p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
+    p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
+    ## higher edges of the bins ##
+    #p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
+    p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
+    p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
+    ## middle of each bin ##
+    p_T_1D = array((p_T_1D_low + p_T_1D_high)/2.)
+    p_P_1D = array((p_P_1D_low + p_P_1D_high)/2.)
+    
+    p_P_1D  = linspace(0.05,20.,N)
+    
     ## Mass of the muon in GeV and angle  cut in degrees ##
     m_mu = .1057
     angle_cut = 20.
-    
-    p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
-    p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
-
-    p_T_1D = 0.5*(p_T_1D_low+p_T_1D_high)
-    p_P_1D = linspace(0.1,20.,N)
-
-    len_pt = len(p_T_1D)
-    len_pp = len(p_P_1D)
+    m_N = (0.9389)                                            # mass of the Nucleon
+    p_F = (0.220)                                             # Fermi Momentum
+    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
     
     Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
         .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
@@ -68,12 +40,14 @@ def flux_interpolate_binned((N,num_flux),M_A,lower,upper):
     ## Interpolate the flux data ##
     E_nu_Flux = linspace(0.,20.,len(Flux))
     Func = interp1d(E_nu_Flux,Flux,kind='cubic')
-    E_nu_new = linspace(0.,20.,num_flux)
-    Flux_new = Func(E_nu_new)
+    E_nu_new = linspace(0.1,20.,num_flux)
+    Flux_new = Func(E_nu_new)    
+    
+    E_nu_3D = broadcast_to(E_nu_new,(N,2*N,num_flux))
 
     Total_Flux = 0.
     for i in range(num_flux):
-        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
+        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])###
 
     ## Define the weight functions needed to integrate over the flux ##
     weight = []
@@ -82,42 +56,34 @@ def flux_interpolate_binned((N,num_flux),M_A,lower,upper):
     
     ###############################################
     ## define the kinematic inputs for each case ##
-    ###############################################
-    p_P_2D,p_T_2D = meshgrid(p_P_1D,p_T_1D,indexing='ij')
-    cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
-    T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu   
-
-    p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1D,p_T_1D,E_nu_new,indexing = 'ij')
-    T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
-    cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
-    E_mu_3D = T_mu_3D + m_mu
-    P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
-    Jac = p_T_3D/(T_mu_3D+m_mu)/sqrt(sq(p_P_3D) + sq(p_T_3D)) 
+    ###############################################    
+    p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1D,p_T_1D,E_nu_new,indexing='ij')
+    P_mu_3D = sqrt(p_P_3D**2 + p_T_3D**2)
+    E_mu_3D = sqrt(P_mu_3D**2 + m_mu**2)
+    cos_mu_3D = p_P_3D/P_mu_3D
     
-    Q2 = 2.*E_nu_3D*(E_mu_3D-P_mu_3D*cos_mu_3D) - m_mu**2
+    Jac = p_T_3D/E_mu_3D/P_mu_3D
     
-    weight = broadcast_to(weight,(len_pp,len_pt,len(Flux_new)))
+    Q2 = 2.*E_nu_3D*(E_mu_3D - P_mu_3D*cos_mu_3D) - m_mu**2
+    
+    weight = broadcast_to(weight,(N,2*N,len(Flux_new)))
     
     ######################################################
     ## make double diff from fit to total cross section ##
     ######################################################
-    double_diff_3D = make_double_diff_dipole(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,1)
-    #double_diff_3D = make_double_diff_binned(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,lower,upper)
+    double_diff_3D = make_double_diff_binned(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,lower,upper)
     double_diff_3D  = double_diff_3D*Jac
     double_diff_3D_temp = where(cos_mu_3D <= cos(angle_cut*pi/180.), 0., double_diff_3D)
-    #double_diff_3D = where(double_diff_3D < 0., 0., double_diff_3D)
     
-    double_diff_3D_temp = where(lower < Q2, double_diff_3D_temp, 0.)
-    double_diff_3D_temp = where(upper > Q2, double_diff_3D_temp, 0.)
+    E_mu_max = E_nu_3D + E_hi - m_N
+    cos_max = E_mu_3D/P_mu_3D - m_mu**2/(2.0*E_nu_3D*P_mu_3D)
     
+    double_diff_3D_temp = where(E_mu_3D <= E_mu_max, double_diff_3D_temp,0.)
+    double_diff_3D_temp = where(cos_mu_3D <= cos_max, double_diff_3D_temp,0.)  
     double_diff_2D = weight_sum_3d(double_diff_3D_temp,weight)
-
-
-    
     
     return Q2,double_diff_2D,double_diff_3D
-
-
+    
 ##############################################
 ## Create double differential cross section ##
 ##############################################
@@ -162,7 +128,6 @@ def make_double_diff_binned(E_mu,E_nu,P_mu,cos_mu,M_A,lower,upper):
     double_diff = (sq(G_F)*P_mu*V_ud**2)/(16.0*sq(pi)*m_T*(GeV_To_Cm**2))*( 2.0*(E_mu-P_mu*cos_mu)*W_1 + (E_mu+P_mu*cos_mu)*W_2 + (1/m_T)*((E_mu-P_mu*cos_mu)*(E_nu+E_mu) - sq(m_mu))*W_3 + sq(m_mu/m_T)*(E_mu-P_mu*cos_mu)*W_4 - (sq(m_mu)/m_T)*W_5)
     double_diff = where(lower <= Q2, double_diff, 0.)
     double_diff = where(upper >= Q2, double_diff, 0.)
-    #double_diff = where(40.<= Q2, 0., double_diff)
     #double_diff = where(cos_mu < cos(20.*pi/180), 0., double_diff)
 
     return double_diff

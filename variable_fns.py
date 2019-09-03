@@ -1,13 +1,6 @@
 ## file  containing variable  creation functions ##
-
-from math import log10, floor
-from numpy import array,linspace,longdouble,where,sqrt,broadcast_to,swapaxes,log,power,nanmin,nanmax,conjugate,sum,maximum,minimum,empty,meshgrid,arccos,amin,amax,exp,zeros,logspace,log10,cos
-from math import pi
-from scipy.integrate import quad
-from sys import exit
-from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-from misc_fns import *
+from numpy import array,linspace,sqrt,broadcast_to,swapaxes,nanmin,nanmax,where
+from misc_fns import sq
 
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
@@ -45,7 +38,7 @@ def make_variables(N_T,N_cos,E_nu):
 
     return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
 
-    ########################################################################
+########################################################################
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
 def make_variables_unbinned(N_T,N_cos,E_nu):
@@ -146,3 +139,40 @@ def make_variables_constrained(N_T,N_cos,E_nu):
     P_mu = swapaxes(P_mu,0,1)
 
     return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
+    
+#########################################################################
+## Create a function to make kinematic variables where E_nu is an array##
+#########################################################################
+def make_variables_3D(N_T,N_cos,E_nu):
+    
+    N_E = len(E_nu)
+    m_N = (0.9389)                                            # mass of the Nucleon
+    m_mu = (0.1057)                                           # mass of Muon GeV
+    p_F = (0.220)                                             # Fermi Momentum
+    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
+
+    ## constraints on T_mu  ##
+    T_mu_max = E_nu + E_hi - m_mu - m_N
+    T_mu_max = where(T_mu_max > 0.05, T_mu_max, 0.06)
+    T_mu_min = 0.05
+    
+    T_mu = array([linspace(T_mu_min,T_mu_max[k],N_T,endpoint=False) for k in range(N_E)] )
+    T_mu = swapaxes(T_mu,0,1)
+    E_mu = T_mu + m_mu
+    P_mu = sqrt(sq(E_mu) - sq(m_mu))
+
+    ## Restrict cos values to those satisfying Q2 > 0 ##
+    cos_max = where(P_mu > 0.,E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu),0.)
+    cos_max = where(cos_max < 1.0, cos_max, 1.0)
+
+    cos_mu = array([[linspace(0.,cos_max[i,j],2*N_cos,endpoint=False) for j in range(N_E)] for i in range(N_T)])
+    cos_mu = swapaxes(cos_mu,2,1)
+
+    T_mu = array([[[T_mu[i,j] for j in range(N_E)] for k in range(2*N_cos)] for i in range(N_T)])
+    E_mu = T_mu + m_mu
+    P_mu = sqrt(sq(E_mu) - sq(m_mu))
+    
+    p_P = P_mu*cos_mu
+    p_T = P_mu*sqrt(1.-cos_mu**2)
+
+    return T_mu,E_mu,P_mu,cos_mu,p_P,p_T

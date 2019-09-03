@@ -168,13 +168,13 @@ len_pt = len(p_T_1D)
 ## some  parameters ##
 m_mu = .1057
 N = 200
-num_flux = 2000
+num_flux = 5000
 M_A = 1.32
 p_P_1D_smooth =  linspace(0.1,20.,N)
 E_nu_flux = linspace(0.,20.,40,endpoint=True)
 E_nu_new = linspace(0.,20.,num_flux,endpoint=True)
 
-Q2_bins = [0.,0.1,0.3,0.6,0.9,1.5,4.,7.5,50.]
+Q2_bins = array([0.0,0.2,0.4,0.6,0.9,1.2,1.5,2.0,3.,7.5,100.])
 y_labels = []
 y = zeros((len(Q2_bins)-1,N,len_pt))
 
@@ -187,13 +187,13 @@ for i in range(len(Q2_bins)-1):
         for k in range(len_pt):
             y[i,j,k] = double_diff[j,k]
 
-a,b,c = nonzero(double_diff_3D)
-print a,b,c
-g=open("Desktop/Research/Axial FF/txt files/Q2 values/Q2_values.txt" % p_T_1D[k],"w+")
-g.write("         Q2            E_nu            p_P            p_T            ddxs \n\n")
-for i in range(len(a)):
-    g.write("    %s            %s            %s            %s            %s \n" % (Q2[a[i],b[i],c[i]],E_nu_new[c[i]],p_P_1D_smooth[a[i]],p_T_1D[b[i]],double_diff_3D[a[i],b[i],c[i]]))
-g.close()
+#a,b,c = nonzero(double_diff_3D)
+#print a,b,c
+#g=open("Desktop/Research/Axial FF/txt files/Q2 values/Q2_values.txt" % p_T_1D[k],"w+")
+#g.write("         Q2            E_nu            p_P            p_T            ddxs \n\n")
+#for i in range(len(a)):
+#    g.write("    %s            %s            %s            %s            %s \n" % (Q2[a[i],b[i],c[i]],E_nu_new[c[i]],p_P_1D_smooth[a[i]],p_T_1D[b[i]],double_diff_3D[a[i],b[i],c[i]]))
+#g.close()
 ## plot ddxs for each value of transverse momentum ##
 for k in range(len_pt):         
     temp_str = "%s" % k
