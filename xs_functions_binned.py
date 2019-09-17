@@ -124,7 +124,15 @@ def flux_interpolate_binned_mb((N,num_flux),M_A,lower,upper):
     
     ###############################################
     ## define the kinematic inputs for each case ##
-    ###############################################    
+    ###############################################   
+    cos_mu_2D,T_mu_2D = meshgrid(cos_mu_1D,T_mu_1D,indexing='ij')
+    E_mu_2D = T_mu_2D + m_mu
+    P_mu_2D = sqrt(E_mu_2D**2 - m_mu**2)
+    p_T_2D = P_mu_2D*cos_mu_2D
+    p_P_2D = P_mu_2D*sqrt(1.-cos_mu_2D**2)
+    Jac = p_T_2D/E_mu_2D/P_mu_2D
+    
+     
     cos_mu_3D,T_mu_3D,E_nu_3D = meshgrid(cos_mu_1D,T_mu_1D,E_nu_new,indexing='ij')
     E_mu_3D = T_mu_3D + m_mu
     P_mu_3D = sqrt(E_mu_3D**2 - m_mu**2)
@@ -145,6 +153,7 @@ def flux_interpolate_binned_mb((N,num_flux),M_A,lower,upper):
     double_diff_3D_temp = where(E_mu_3D <= E_mu_max, double_diff_3D,0.)
     double_diff_3D_temp = where(cos_mu_3D <= cos_max, double_diff_3D_temp,0.)  
     double_diff_2D = weight_sum_3d(double_diff_3D_temp,weight)
+    #double_diff_2D = double_diff_2D*Jac
     
     return Q2,double_diff_2D,double_diff_3D
     
