@@ -16,6 +16,7 @@ angleCut = 20                   ## minerva angle cut
 mN = 0.9389                     ## mass of nucleon
 pF = 0.22                       ## fermi momentum for RFG
 eB = 0.034                      ## binding energy for rfg
+Ehi = np.sqrt(mN**2 + pF**2)    ## Upper limit of neutron energy integration 
 muP = 2.793                     ## proton magnetic moment
 muN = -1.913                    ## neutron magnetic moment
 gA = -1.2723                    ## F_A(q^2 = 0)
