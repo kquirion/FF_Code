@@ -1,4 +1,4 @@
-## This file contains many functions for running cross section calculations ##
+## This file contains many functions for running cross section calculations with the dipole form factor ##
 import numpy as np
 from math import pi
 from sys import exit
