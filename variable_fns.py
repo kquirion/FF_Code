@@ -6,9 +6,6 @@ from misc_fns import sq
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
 def make_variables(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
 
     T_mu_max = E_nu + E_hi - m_mu - m_N
@@ -42,9 +39,6 @@ def make_variables(N_T,N_cos,E_nu):
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
 def make_variables_unbinned(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
 
     T_mu_max = E_nu + E_hi - m_mu - m_N
@@ -78,9 +72,6 @@ def make_variables_unbinned(N_T,N_cos,E_nu):
 ## Create a function to make the kinematic variables ##
 #######################################################
 def make_variables_constrained(N_T,N_cos,E_nu):
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
 
     ## make the original cos_mu vector from [-1,1]
     cos_mu = linspace(-1.0,1.0,2*N_cos)
@@ -146,9 +137,6 @@ def make_variables_constrained(N_T,N_cos,E_nu):
 def make_variables_3D(N_T,N_cos,E_nu):
     
     N_E = len(E_nu)
-    m_N = (0.9389)                                            # mass of the Nucleon
-    m_mu = (0.1057)                                           # mass of Muon GeV
-    p_F = (0.220)                                             # Fermi Momentum
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
 
     ## constraints on T_mu  ##

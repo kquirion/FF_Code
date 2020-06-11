@@ -1,53 +1,31 @@
 ## This file contains many functions for running cross section calculations ##
-from numpy import array,linspace,where,sqrt,broadcast_to,swapaxes,log,power,nanmax,sum,maximum,empty,meshgrid,amin,amax,exp,zeros,cos,set_printoptions
+import numpy as np
 from math import pi
 from sys import exit
 from scipy.interpolate import interp1d
 from misc_fns import sq,weight_sum_3d,round_sig
 from variable_fns import make_variables
+from DataFile import FluxMv,pT1D,pP1D,pT1DLowmpT1DHigh,pP1DLow,pP1DHigh,mMu,angleCut
 
-set_printoptions(precision=3)
+np.set_printoptions(precision=3)
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def make_ddxs_dipole_smooth((N,num_flux),M_A):
+def make_ddxs_dipole_smooth(N,numFlux,MA):
 
-    ## Mass of the muon in GeV and angle  cut in degrees ##
-    m_mu = .1057
-    angle_cut = 20.
+    len_pt = len(pT1D)
+    len_pp = len(pP1D)
     
-    Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
-        .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
-    Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
-        .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
-    Flux_minerva = Flux_FHC + Flux_RHC
-
-    ## Lower edges of the bins ##
-    #p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
-    p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
-    p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
-    ## higher edges of the bins ##
-    #p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
-    p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
-    p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
-    ## middle of each bin ##
-    p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
-    p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
-
-    len_pt = len(p_T_1D)
-    len_pp = len(p_P_1D)
-    
-    ## Number of bins to average  the ddxs over ##
-    p_T_1d = array([linspace(p_T_1D_low[i],p_T_1D_high[i],N) for i in range(len_pt)])
-    p_P_1d = array([linspace(p_P_1D_low[i],p_P_1D_high[i],N) for i in range(len_pp)])
+    ## create upper and lower bounds on bins within each experimental bin ##
+    pT1d = np.array([linspace(pT1DLow[i],pT1DHigh[i],N) for i in range(len_pt)])
+    pP1d = np.array([linspace(pP1DLow[i],pP1DHigh[i],N) for i in range(len_pp)])
     
     ## Interpolate the flux data ##
-    Flux = Flux_minerva
-    E_nu_Flux = linspace(0.,20.,len(Flux))
-    Func = interp1d(E_nu_Flux,Flux,kind='cubic')
-    E_nu_new = linspace(0.,20.,num_flux)
-    Flux_new = Func(E_nu_new)
+    EnuFlux = np.linspace(0.,20.,len(FluxMv))
+    Func = interp1d(EnuFlux,FluxMv,kind='cubic')
+    EnuNew = nFlinspace(0.,20.,num_flux)
+    FluxNew = Func(EnuNew)
 
-    Total_Flux = 0
+    TotalFlux = 0
     for i in range(len(Flux_new)):
         Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
 
@@ -134,30 +112,6 @@ def make_ddxs_dipole_smooth((N,num_flux),M_A):
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
 def make_ddxs_dipole_smooth_unc((N,num_flux),M_A):
-
-    ## Mass of the muon in GeV and angle  cut in degrees ##
-    m_mu = .1057
-    angle_cut = 20.
-    
-    Flux_FHC = array([2.57,6.53,17.,25.1,33.1,40.7,42.8,34.2,20.4,11.1,6.79,4.87,3.95,3.34,2.91,2.55,2.29,2.05,1.85,1.7,1.54,1.41,1.28,1.18,1.07,
-        .989,.906,.842,.761,.695,.619,.579,.532,.476,.44,.403,.371,.34,.317,.291])*3.34*10**(14)
-    Flux_RHC = array([1.26,1.69,1.78,1.88,1.90,1.96,1.9,1.82,1.73,1.65,1.64,1.70,1.75,1.80,1.76,1.73,1.65,1.57,1.47,1.37,1.28,1.17,1.08,.998,.919,
-        .832,.76,.677,.643,.574,.535,.479,.445,.397,.336,.33,.311,.285,.264,.239])
-    Flux_minerva = Flux_FHC + Flux_RHC
-
-    ## Lower edges of the bins ##
-    #p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
-    p_T_1D_low = array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
-    p_P_1D_low = array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
-
-    ## higher edges of the bins ##
-    #p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5,2.5])
-    p_T_1D_high = array([.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25,1.5])
-    p_P_1D_high = array([2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.,20.])
-
-    ## middle of each bin ##
-    p_T_1D = (p_T_1D_low + p_T_1D_high)/2.
-    p_P_1D = (p_P_1D_low + p_P_1D_high)/2.
     
     len_pt = len(p_T_1D)
     len_pp = len(p_P_1D)
@@ -267,13 +221,10 @@ def make_ddxs_dipole_smooth_unc((N,num_flux),M_A):
 ## Create the a elements ##
 ###########################
 def make_a_elements(Q2,q,w,w_eff):
-    A = (12)                                                  # number of target neutrons
-    m_N = (0.9389)                                            # mass of the Nucleon
-    p_F = (0.220)                                             # Fermi Momentum
-    E_hi = sqrt(m_N**2 + p_F**2)                       # Upper limit of neutron energy integration
-    E_b = 0.034                                             # binding energy GeV
-    m_T = A*(m_N-E_b)                                       # mass of target Nucleus
-    V = (3*pi**2*A)/(2.*p_F**3)                         # Volume of the tagret
+    A = 12                                             # number of target neutrons
+    E_hi = sqrt(mN**2 + pF**2)                         # Upper limit of neutron energy integration                                           # binding energy GeV
+    m_T = A*(mN-eB)                                    # mass of target Nucleus
+    V = (3*pi**2*A)/(2.*pF**3)                         # Volume of the tagret
 
     ## fill in the values for some useful coefficients ##
     c = -w_eff/q
@@ -317,20 +268,14 @@ def make_a_elements(Q2,q,w,w_eff):
 ## Make form factors ##
 #######################
 def make_form_factors(Q2,M_A,Form_factor):
-    m_N = 0.9389                                            # mass of the Nucleon
-    mu_p = 2.793                                            # proton magnetic moment
-    mu_n = -1.913                                           # neutron magnetic moment
+
     a2 = [3.253,3.104,3.043,3.226,3.188]                    # coefficient for form factor denominator (see Arrington Table 2)
     a4 = [1.422,1.428,0.8548,1.508,1.354]
     a6 = [0.08582,0.1112,0.6806,-0.3773,0.1511]
     a8 = [0.3318,-0.006981,-0.1287,0.6109,-0.01135]
     a10 = [-0.09371,0.0003705,0.008912,-0.1853,0.0005330]
     a12 = [0.01076,-0.7063*10**(-5),0.0,0.01596,-0.9005*10**(-5)]
-    M = m_N                                                 # Mass of the W Boson
     M_V2 = 0.71                                             # Vector mass parameter
-    g_A = -1.2723                                            # F_A(q^2 = 0)
-    M_pi = 0.1396                                           # mass of the pion
-    M_rho = 0.775
     Q_low = 1.3                                             # Energies for determining the form of Dr Friedland's F_A parametrization
     Q_high = 1000.0
     m_a_1 = 1.230                                           # Masses for defining the Masjuan double pole parametrization for F_A
@@ -380,28 +325,14 @@ def make_form_factors(Q2,M_A,Form_factor):
 ## Make FFs for dipole fit ##
 #############################
 def make_form_factors_dipole(Q2,M_A):
-    m_N = 0.9389                                            # mass of the Nucleon
-    mu_p = 2.793                                            # proton magnetic moment
-    mu_n = -1.913                                           # neutron magnetic moment
     a2 = [3.253,3.104,3.043,3.226,3.188]                    # coefficient for form factor denominator (see Arrington Table 2)
     a4 = [1.422,1.428,0.8548,1.508,1.354]
     a6 = [0.08582,0.1112,0.6806,-0.3773,0.1511]
     a8 = [0.3318,-0.006981,-0.1287,0.6109,-0.01135]
     a10 = [-0.09371,0.0003705,0.008912,-0.1853,0.0005330]
     a12 = [0.01076,-0.7063*10**(-5),0.0,0.01596,-0.9005*10**(-5)]
-    M = m_N                                                 # Mass of the W Boson
     M_V2 = 0.71                                             # Vector mass parameter
-    M_V_nuance  = 0.84
-    #g_A = -1.269
-    g_A = -1.2723                                            # F_A(q^2 = 0)
-    #g_A = 2.3723                                           # fake parameter for single xs
-    M_pi = 0.1396                                           # mass of the pion
     a = 0.942
-    b = 4.61
-    tau = Q2/4./sq(m_N)
-
-    #G_D = 1./(1+Q2/sq(M_V_nuance))**2
-    #GEn = -mu_n*(a*tau)/(1.+b*tau)*G_D
 
     GEp = where(Q2 < 6.0,1.0/(1 + a2[0]*Q2 + a4[0]*sq(Q2) + a6[0]*power(Q2,3) + a8[0]*power(Q2,4) + a10[0]*power(Q2,5) + a12[0]*power(Q2,6)),(mu_p/(1+a2[1]*Q2+a4[1]*sq(Q2)+a6[1]*power(Q2,3)+a8[1]*power(Q2,4)+a10[1]*power(Q2,5)+a12[1]*power(Q2,6))) * (0.5/(1+a2[0]*6.0+a4[0]*6.0**2+a6[0]*6.0**3+a8[0]*6.0**4+a10[0]*6.0**5+a12[0]*6.0**6)) / (0.5*mu_p/(1+a2[1]*6.0+a4[1]*6.0**2+a6[1]*6.0**3+a8[1]*6.0**4+a10[1]*6.0**5+a12[1]*6.0**6)))
     GMp = mu_p/(1+a2[1]*Q2+a4[1]*sq(Q2)+a6[1]*power(Q2,3)+a8[1]*power(Q2,4)+a10[1]*power(Q2,5)+a12[1]*power(Q2,6))
@@ -414,7 +345,6 @@ def make_form_factors_dipole(Q2,M_A):
     F_2 = (GMV - GEV)/((1. + Q2/(4.*M**2)))
     F_A = g_A / sq(1. + Q2/sq(M_A))
     F_P = 2.0*sq(m_N)*F_A/(M_pi**2 + Q2)
-    #F_P = 2.*sq(m_N)/(-Q2)*(g_A/(1+Q2/sq(M_pi)) - F_A)       # from 1972 paper
 
     return F_1,F_2,F_A,F_P
 
@@ -422,31 +352,12 @@ def make_form_factors_dipole(Q2,M_A):
 def make_double_diff_miniboone(M_A):
     ## parameters ##
     A = 12                                                  # number of Nucleons
-    m_N = 0.9389                                            # mass of the Nucleon
-    E_b = 0.034                                             # binding energy GeV
-    m_T = A*(m_N-E_b)                                       # mass of target Nucleus
-    m_mu = 0.1057                                           # mass of Muon GeV
-    V_ud = 0.9742                                           # Mixing element for up and down quarks
-    GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
-    G_F = 1.166*10**(-5)                                    # Fermi Constant
-    POT = 5.58*10**(20)                                     # Integrated number of protons on target
-
-    ## Create an array of the neutrino flux ##
-    Flux = array([45.4,171,222,267,332,364,389,409,432,448,456,458,455,451,443,
-        431,416,398,379,358,335,312,288,264,239,214,190,167,146,126,108,
-        92,78,65.7,55.2,46.2,38.6,32.3,27.1,22.8,19.2,16.3,13.9,11.9,
-        10.3,8.96,7.87,7,6.3,5.73,5.23,4.82,4.55,4.22,3.99,3.84,3.63,
-        3.45,3.33,3.20])*10**(-12)
-
-    T_mu_1d = linspace(0.25,1.95,18,endpoint=True)
-    cos_mu_1d = linspace(-.95,.95,20,endpoint=True)
-    E_nu_1d = linspace(0.05, (len(Flux))/20.0,len(Flux),endpoint=True)
-
+    m_T = A*(m_N-E_b)                                       # mass of target Nucleus    
+    PT = 5.58*10**(20)                                     # Integrated number of protons on target
     NT = len(T_mu_1d)
     NC = len(cos_mu_1d)
 
     ## fill in the Q^2 = -q^2 values ##
-    E_nu = linspace(0., 3.,len(Flux),endpoint=True)
     Func = interp1d(E_nu,Flux,kind='cubic')
 
     num_flux = 500
@@ -515,13 +426,7 @@ def make_double_diff_miniboone(M_A):
 def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     ## parameters ##
     A = 12.
-    m_N = 0.9389                                            # mass of the Nucleon
-    E_b = 0.034                                             # binding energy GeV
     m_T = A*(m_N-E_b)                                       # mass of target Nucleus
-    m_mu = 0.1057                                           # mass of Muon GeV
-    V_ud = 0.9742                                           # Mixing element for up and down quarks
-    GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
-    G_F = 1.166*10**(-5)                                    # Fermi Constant
     
     ## fill in the Q^2 = -q^2 values ##
     Q2 = 2.0*E_mu*E_nu - 2.0*E_nu*P_mu*cos_mu - m_mu**2
@@ -649,22 +554,9 @@ def make_total_xs_dipole(E_nu,M_A):
 def make_single_diff(Q2_passed,N):
     ## parameters ##
     num = 12                                                # number of Nucleons
-    m_N = 0.9389                                            # mass of the Nucleon
-    m_mu = 0.1057                                           # mass of Muon GeV
-    G_F = 1.166*10**(-5)                                    # Fermi Constant
     cos = 0.974                                             # cosine of cabibbo angle
-    GeV_To_Cm = 5.06773076*10**(13)                         # Conversion factor for GeV to cm
     M_A = 1.35
 
-    ## Create an array of the neutrino flux ##
-    Flux = array([45.4,171.,222.,267.,332.,364.,389.,409.,432.,448.,456.,458.,455.,451.,443.,
-        431.,416.,398.,379.,358.,335.,312.,288.,264.,239.,214.,190.,167.,146.,126.,108.,
-        92.,78.,65.7,55.2,46.2,38.6,32.3,27.1,22.8,19.2,16.3,13.9,11.9,
-        10.3,8.96,7.87,7,6.3,5.73,5.23,4.82,4.55,4.22,3.99,3.84,3.63,
-        3.45,3.33,3.20])*10**(-12)
-
-    ## fill in the Q^2 = -q^2 values ##
-    E_nu = linspace(0., 3.,len(Flux),endpoint=True)
     Func = interp1d(E_nu,Flux,kind='cubic')
 
     num_flux = 1000
