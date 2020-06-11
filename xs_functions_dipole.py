@@ -5,12 +5,12 @@ from sys import exit
 from scipy.interpolate import interp1d
 from misc_fns import sq,weight_sum_3d,round_sig
 from variable_fns import make_variables
-from DataFile import FluxMv,pT1D,pP1D,pT1DLowmpT1DHigh,pP1DLow,pP1DHigh,mMu,angleCut
+from DataFile import *
 
 np.set_printoptions(precision=3)
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def make_ddxs_dipole_smooth(N,numFlux,MA):
+def DdxsDipoleSmooth(N,numFlux,MA):
 
     len_pt = len(pT1D)
     len_pp = len(pP1D)
@@ -22,137 +22,132 @@ def make_ddxs_dipole_smooth(N,numFlux,MA):
     ## Interpolate the flux data ##
     EnuFlux = np.linspace(0.,20.,len(FluxMv))
     Func = interp1d(EnuFlux,FluxMv,kind='cubic')
-    EnuNew = nFlinspace(0.,20.,num_flux)
+    EnuNew = np.linspace(0.,20.,num_flux)
     FluxNew = Func(EnuNew)
 
     TotalFlux = 0
-    for i in range(len(Flux_new)):
-        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
+    TotalFlux = 20 * sum(FluxNew) / numFlux
 
     ## Define the weight functions needed to integrate over the flux ##
     weight = []
-    for i in range(len(Flux_new)):
-        weight.append( (20./num_flux)*Flux_new[i]/Total_Flux)
+    [ weight.append( 20 * flux / numFlux  / TotalFlux ) for flux in FluxNew ]
 
     ## an array to hold the different ddxs arrays to be averaged over ##
-    ddxs_holder = zeros((N,len_pp*len_pt))
+    ddxsHolder = np.zeros((N,len_pp*len_pt))
     
     ###############################################
-    ## define the kinematic inputs for each case ##
+    ######## calculation for eacch sub-bin ########
     ###############################################
     for o in range(N):
-        p_P_2D,p_T_2D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],indexing='ij')
-        cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
-        T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
-        Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
+        pP2D,pT2D = np.meshgrid(pP1d[:,o],pT1d[:,o],indexing='ij')
+        CosMu2D = pP2D /  np.sqrt( pP2D**2 + pT2D**2 )
+        Tmu2D = np.sqrt( pP2D**2 + pT2D**2 + mMu**2 ) - mMu
+        Jac = pT2D / ( Tmu2D + mMu ) / np.sqrt( pP2D**2 + pT2D**2 )
     
-        p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],E_nu_new,indexing = 'ij')
-        T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
-        cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
-        E_mu_3D = T_mu_3D + m_mu
-        P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
+        pP3D,pT3D,Enu3D = np.meshgrid(pP1d[:,o],pT1d[:,o],EnuNew,indexing = 'ij')
+        Tmu3D = np.sqrt( pP3D**2 + pT3D**2 + mMu**2 ) - mMu
+        CosMu3D = pP3D / np.sqrt( pT3D**2 + pP3D**2 )
+        Emu3D = Tmu3D + mMu
+        Pmu3D = np.sqrt( pT3D**2 + pP3D**2 )
     
-        weight = broadcast_to(weight,(len_pp,len_pt,len(Flux_new)))
+        weight = np.broadcast_to(weight,(len_pp,len_pt,len(FluxNew)))
     
         ######################################################
         ## make double diff from fit to total cross section ##
         ######################################################
-        double_diff = make_double_diff_dipole(E_mu_3D,E_nu_3D,P_mu_3D,cos_mu_3D,M_A,1)
+        doubleDiff = DdxsDipole(Emu3D,Enu3D,Pmu3D,CosMu3D,MA,1)
     
         #######################################################################
         ## find the bounds on the indices where the cross section is nonzero ##
         #######################################################################
-        a = empty([len_pp,len_pt], dtype=int)
-        b = empty([len_pp,len_pt],dtype=int)
+        a = np.empty([len_pp,len_pt], dtype=int)
+        b = np.empty([len_pp,len_pt],dtype=int)
         for i in range(len_pp):
             for j in range(len_pt):
                 A = 0
-                B = num_flux-1
-                while double_diff[i,j,A] == 0.:
+                B = numFlux-1
+                while doubleDiff[i,j,A] == 0.:
                     A += 1
-                    if A ==  num_flux:
+                    if A ==  numFlux:
                         break
-                while  double_diff[i,j,B] == 0. :
+                while  doubleDiffiff[i,j,B] == 0. :
                     B -= 1
                     if B == 0:
                         break
                 a[i,j] = A-1
                 b[i,j] = B+1
-        b = where( b == num_flux, num_flux-1, b)
+        b = np.where( b == numFlux, numFlux-1, b)
     
         ## Find new ranges of flux for each combo of p_T and p_|| ##
-        even_newer_E_nu = empty([len_pp,len_pt,num_flux])
+        EvenNewerEnu = empty([len_pp,len_pt,numFlux])
         for i in range(len_pp):
             for j in range(len_pt):
-                temp_flux = linspace(E_nu_new[a[i,j]],E_nu_new[b[i,j]],num_flux)
-                for k in range(num_flux):
-                    even_newer_E_nu[i,j,k] = temp_flux[k]
+                tempFlux = np.linspace(EnuNew[a[i,j]],EnuNew[b[i,j]],numFlux)
+                for k in range(numFlux):
+                    EvenNewerEnu[i,j,k] = tempFlux[k]
         ## Create new weight funcntions for each combo of p_T and p_|| ##
-        newer_flux_new = Func(even_newer_E_nu)
-        new_weights = empty([len_pp,len_pt,num_flux])
+        NewerFluxNew = Func(EvenNewerEnu)
+        NewWeights = np.empty([len_pp,len_pt,numFlux])
         for i in range(len_pp):
             for j in range(len_pt):
-                temp_max = amax(even_newer_E_nu[i,j])
-                temp_min = amin(even_newer_E_nu[i,j])
-                for k in range(num_flux):
-                    new_weights[i,j,k] = ((temp_max-temp_min)/num_flux)*(newer_flux_new[i,j,k]/Total_Flux)
+                TempMax = np.amax(EvenNewerEnu[i,j])
+                TempMin = np.amin(EvenNewerEnu[i,j])
+                for k in range(numFlux):
+                    NewWeights[i,j,k] = ( (TempMax-TempMin) / numFlux ) * ( NewerFluxNew[i,j,k] / TotalFlux )
     
-        double_diff = make_double_diff_dipole(E_mu_3D,even_newer_E_nu,P_mu_3D,cos_mu_3D,M_A,1)
-        double_diff_temp = weight_sum_3d(double_diff.real,new_weights)/12.
-        double_diff_temp = where(cos_mu_2D < cos(angle_cut*pi/180), 0., double_diff_temp)
-        double_diff_temp  = double_diff_temp*Jac
-        double_diff_temp = double_diff_temp.ravel()
+        doubleDiff = DdxsDipole(Emu3D,EvenNewerEnu,Pmu3D,CosMu3D,MA,1)
+        doubleDiffTemp = WeightSum3d(doubleDiff.real,NewWeights)/12.
+        doubleDiffTemp = np.where( CosMu2D < np.cos( angleCut * pi / 180), 0., doubleDiffTemp)
+        doubleDiffTemp  = doubleDiffTemp * Jac
+        doubleDiffTemp = doubleDiffTemp.ravel()
         for i in range(len_pp):
             for j in range(len_pt):
-                ddxs_holder[o][i*len_pt+j] = double_diff_temp[i*len_pt+j]
+                ddxsHolder[o][i*len_pt+j] = doubleDiffTemp[i*len_pt+j]
     
-    ddxs_avg = array(sum(ddxs_holder,0)/N)
+    ddxsAvg = array(sum(ddxsHolder,0)/N)
     
-    return ddxs_avg
+    return ddxsAvg
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def make_ddxs_dipole_smooth_unc((N,num_flux),M_A):
+def DdxsDipoleSmoothUnc(N,numFlux,MA):
     
-    len_pt = len(p_T_1D)
-    len_pp = len(p_P_1D)
+    len_pt = len(pT1D)
+    len_pp = len(pP1D)
 
     ## Number of bins to average  the ddxs over ##
-    p_T_1d = array([linspace(p_T_1D_low[i],p_T_1D_high[i],N) for i in range(len_pt)])
-    p_P_1d = array([linspace(p_P_1D_low[i],p_P_1D_high[i],N) for i in range(len_pp)])
+    pT1d = np.array([np.linspace(pT1DLow[i],pT1DHigh[i],N) for i in range(len_pt)])
+    pP1d = np.array([np.linspace(pP1DLow[i],pP1DHigh[i],N) for i in range(len_pp)])
     
     ## Interpolate the flux data ##
-    Flux = Flux_minerva
-    E_nu_Flux = linspace(0.,20.,len(Flux))
-    Func = interp1d(E_nu_Flux,Flux,kind='cubic')
-    E_nu_new = linspace(0.,20.,num_flux)
-    Flux_new = Func(E_nu_new)
+    EnuFlux = linspace(0.,20.,len(FluxMv))
+    Func = interp1d(EnuFlux,FluxMv,kind='cubic')
+    EnuNew = np.linspace(0.,20.,numFlux)
+    FluxNew = Func(EnuNew)
 
-    Total_Flux = 0
-    for i in range(len(Flux_new)):
-        Total_Flux = Total_Flux + 20./num_flux*(Flux_new[i])
+    TotalFlux = 0
+    Total_Flux = 20 * sum( FluxNew) / numFlux 
 
     ## Define the weight functions needed to integrate over the flux ##
     weight = []
-    for i in range(len(Flux_new)):
-        weight.append( (20./num_flux)*Flux_new[i]/Total_Flux)
+    [ weight.append( 20 * flux / numFlux / TotalFlux ) for flux in FluxNew ]
 
     ## an array to hold the different ddxs arrays to be averaged over ##
-    ddxs_holder = zeros((N,len_pp*len_pt))
+    ddxsHolder = np.zeros((N,len_pp*len_pt))
     
     ###############################################
     ## define the kinematic inputs for each case ##
     ###############################################
     for o in range(N):
-        p_P_2D,p_T_2D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],indexing='ij')
-        cos_mu_2D = p_P_2D/sqrt(sq(p_P_2D) + sq(p_T_2D))
-        T_mu_2D = sqrt(sq(p_P_2D) + sq(p_T_2D) + sq(m_mu)) - m_mu
-        Jac = p_T_2D/(T_mu_2D+m_mu)/sqrt(sq(p_P_2D) + sq(p_T_2D))
+        pP2D,pT2D = np.meshgrid(pP1d[:,o],pT1d[:,o],indexing='ij')
+        CosMu2D = pP2D / np.sqrt( pP2D**2 + pT2D**2 )
+        Tmu2D = np.sqrt( pP2D**2 + pT2D**2 + mMu**2 ) - mMu
+        Jac = pT2D / ( Tmu2D + mMu ) / np.sqrt( pP2D**2 + pT2D**2)
     
-        p_P_3D,p_T_3D,E_nu_3D = meshgrid(p_P_1d[:,o],p_T_1d[:,o],E_nu_new,indexing = 'ij')
-        T_mu_3D = sqrt(sq(p_P_3D) + sq(p_T_3D) + sq(m_mu)) - m_mu
-        cos_mu_3D = p_P_3D/sqrt(sq(p_T_3D) + sq(p_P_3D))
-        E_mu_3D = T_mu_3D + m_mu
-        P_mu_3D = sqrt(sq(p_T_3D) + sq(p_P_3D))
+        pP3D,pT3D,Enu3D = np.meshgrid(pP1d[:,o],pT1d[:,o],EnuNew,indexing = 'ij')
+        Tmu3D = np.sqrt( pP3D**2 + pT3D**2 + mMu**2 ) - mMu
+        CosMu3D = pP3D / np.sqrt( pT3D**2 + pP3D**2 )
+        Emu3D = Tmu3D + mMu
+        Pmu3D = np.sqrt( pT3D**2 + pP3D**2 )
     
         weight = broadcast_to(weight,(len_pp,len_pt,len(Flux_new)))
     
@@ -423,7 +418,7 @@ def make_double_diff_miniboone(M_A):
 ## Create double differential cross section ##
 ### opt = 1 neutrino, opt = 2 antineutrino ###
 ##############################################
-def make_double_diff_dipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
+def DdxsDipole(E_mu,E_nu,P_mu,cos_mu,M_A,opt):
     ## parameters ##
     A = 12.
     m_T = A*(m_N-E_b)                                       # mass of target Nucleus
