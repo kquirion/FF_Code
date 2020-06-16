@@ -5,7 +5,7 @@ from misc_fns import sq
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
-def make_variables(N_T,N_cos,E_nu):
+def Variables(N_T,N_cos,E_nu):
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
 
     T_mu_max = E_nu + E_hi - m_mu - m_N
@@ -38,7 +38,7 @@ def make_variables(N_T,N_cos,E_nu):
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
-def make_variables_unbinned(N_T,N_cos,E_nu):
+def VariablesUnbinned(N_T,N_cos,E_nu):
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
 
     T_mu_max = E_nu + E_hi - m_mu - m_N
@@ -71,7 +71,7 @@ def make_variables_unbinned(N_T,N_cos,E_nu):
 #######################################################
 ## Create a function to make the kinematic variables ##
 #######################################################
-def make_variables_constrained(N_T,N_cos,E_nu):
+def VariablesConstrained(N_T,N_cos,E_nu):
 
     ## make the original cos_mu vector from [-1,1]
     cos_mu = linspace(-1.0,1.0,2*N_cos)
@@ -134,7 +134,7 @@ def make_variables_constrained(N_T,N_cos,E_nu):
 #########################################################################
 ## Create a function to make kinematic variables where E_nu is an array##
 #########################################################################
-def make_variables_3D(N_T,N_cos,E_nu):
+def Variables3D(N_T,N_cos,E_nu):
     
     N_E = len(E_nu)
     E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
