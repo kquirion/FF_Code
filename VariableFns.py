@@ -1,166 +1,130 @@
 ## file  containing variable  creation functions ##
 from numpy import array,linspace,sqrt,broadcast_to,swapaxes,nanmin,nanmax,where
-from misc_fns import sq
+from DataFile import *
 
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
-def Variables(N_T,N_cos,E_nu):
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_min = 0.05
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    DELTA_T_mu = (T_mu_max-T_mu_min)/N_T
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
+def Variables(NT,Ncos,Enu):
+    TmuMax = Enu + Ehi - mMu - mN
+    TmuMin = 0.05
+    Tmu = linspace(TmuMin,TmuMax,NT,endpoint=False)
+    DeltaTmu = (TmuMax-TmuMin)/NT
+    Emu = Tmu + mMu
+    Pmu = sqrt( Emu**2 - mMu**2 )
     ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-    #cos_max = 20.*pi/180.
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = array([linspace(-cos_max,cos_max,2*N_cos,endpoint=False) for i in range(N_T)])
-
-    DELTA_cos_mu = array([0.0  for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(int(2*N_cos/100),N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(int(2*N_cos/100),N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(int(2*N_cos/100),N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
+    CosMax = Emu / Pmu - mMu**2 / ( 2. * Enu * Pmu )
+    CosMax = where(CosMax < 1.0, CosMax, 1.0)
+    #CosMax = 20.*pi/180.
+    CosMu = array([linspace(-CosMax[i],CosMax[i],2*Ncos,endpoint=False) for i in range(NT)])
+    #CosMu = array([linspace(-CosMax,CosMax,2*Ncos,endpoint=False) for i in range(NT)])
+    DeltaCosMu = array([0.0  for i in range(NT)])
+    for i in range(NT):
+        DeltaCosMu[i] = abs(CosMu[i][1] - CosMu[i][0])
+    Tmu = broadcast_to(Tmu,(int(2*Ncos/100),NT))
+    Tmu = swapaxes(Tmu,0,1)
+    Emu = broadcast_to(Emu,(int(2*Ncos/100),NT))
+    Emu = swapaxes(Emu,0,1)
+    Pmu = broadcast_to(Pmu,(int(2*Ncos/100),NT))
+    Pmu = swapaxes(Pmu,0,1)
+    return Tmu,Emu,Pmu,Enu,CosMu,DeltaCosMu,DeltaTmu
 
 ########################################################################
 ## Create a function to make the less constrained kinematic variables ##
 ########################################################################
-def VariablesUnbinned(N_T,N_cos,E_nu):
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_min = 0.05
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    DELTA_T_mu = (T_mu_max-T_mu_min)/N_T
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
+def VariablesUnbinned(NT,Ncos,Enu):
+    TmuMax = Enu + Ehi - mMu - mN
+    TmuMin = 0.05
+    Tmu = linspace(TmuMin,TmuMax,NT,endpoint=False)
+    DeltaTmu = (TmuMax-TmuMin)/NT
+    Emu = Tmu + mMu
+    Pmu = sqrt( Emu**2 - mMu**2 )
     ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-    #cos_max = 20.*pi/180.
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = array([linspace(-cos_max,cos_max,2*N_cos,endpoint=False) for i in range(N_T)])
-
-    DELTA_cos_mu = array([0.0  for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(2*N_cos,N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(2*N_cos,N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(2*N_cos,N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
+    CosMax = Emu / Pmu - mMu**2 / ( 2. * Enu * Pmu )
+    CosMax = where(CosMax < 1.0, CosMax, 1.0)
+    #CosMax = 20.*pi/180.
+    CosMu = array([linspace(-CosMax[i],CosMax[i],2*Ncos,endpoint=False) for i in range(NT)])
+    #CosMu = array([linspace(-CosMax,CosMax,2*Ncos,endpoint=False) for i in range(NT)])
+    DeltaCosMu = array([0.0  for i in range(NT)])
+    for i in range(NT):
+        DeltaCosMu[i] = abs(CosMu[i][1] - CosMu[i][0])
+    Tmu = broadcast_to(Tmu,(2*Ncos,NT))
+    Tmu = swapaxes(Tmu,0,1)
+    Emu = broadcast_to(Emu,(2*Ncos,NT))
+    Emu = swapaxes(Emu,0,1)
+    Pmu = broadcast_to(Pmu,(2*Ncos,NT))
+    Pmu = swapaxes(Pmu,0,1)
+    return Tmu,Emu,Pmu,Enu,CosMu,DeltaCosMu,DeltaTmu
 
 #######################################################
 ## Create a function to make the kinematic variables ##
 #######################################################
-def VariablesConstrained(N_T,N_cos,E_nu):
-
-    ## make the original cos_mu vector from [-1,1]
-    cos_mu = linspace(-1.0,1.0,2*N_cos)
-    cos_mu = broadcast_to(cos_mu,(N_T,2*N_cos))
-
-
+def VariablesConstrained(NT,Ncos,Enu):
+    CosMu = linspace(-1.0,1.0,2*Ncos)
+    CosMu = broadcast_to(CosMu,(NT,2*Ncos))
     ## 1D Create arrays for neutron momentum and energy ##
-    p_n = linspace(-p_F,p_F,N_T)
-    p_n = broadcast_to(p_n,(2*N_cos,N_T))
-    p_n = swapaxes(p_n,0,1)
-    E_n = sqrt(sq(p_n) + sq(m_N))
-
-    ## define quantities for solving the quadratic equation for T_mu ##
-    e = -2.0*(E_nu+E_n)*(E_nu*(E_n-m_mu-p_n)- m_mu*E_n + sq(m_mu)/2.)
-    a = sq(E_nu+E_n) - sq(cos_mu)*sq(E_nu+p_n)
-    b = e - 2.0*sq(cos_mu)*sq(E_nu+p_n)
-    c = sq(e)/(sq(E_nu+E_n))
-
-    cos_bounds = where(sq(b)-4.0*a*c > 0.0 , cos_mu,10)
-    cos_bound = nanmin(cos_bounds,axis=1)
-    cos_bound = where(cos_bound < 1.0, cos_bound, 1.0)
-
-    cos_mu = array([linspace(-cos_bound[i],cos_bound[i],2*N_cos,endpoint=False) for i in range(N_T)])
-
-    a = sq(E_nu+E_n) - sq(cos_mu)*sq(E_nu+p_n)
-    b = e - 2.0*sq(cos_mu)*sq(E_nu+p_n)
-    c = sq(e)/(sq(E_nu+E_n))
-    d = sq(b)-4.0*a*c
+    pn = linspace(-pF,pF,NT)
+    pn = broadcast_to(pn,(2*Ncos,NT))
+    pn = swapaxes(pn,0,1)
+    En = sqrt( pn**2 + mN**2 )
+    ## define quantities for solving the quadratic equation for Tmu ##
+    e = -2. * ( Enu + En ) * ( Enu * ( En - mMu - pn ) - mMu * En + mMu**2 / 2. )
+    a = ( Enu + En )**2 - CosMu**2 * ( Enu + pn )**2
+    b = e - 2. * ( CosMu )**2 * ( Enu + pn )**2
+    c = e**2 / ( ( Enu + En )**2 )
+    CosBounds = where( b**2 - 4. * a * c > 0.0 , CosMu,10)
+    CosBound = nanmin(CosBounds,axis=1)
+    CosBound = where(CosBound < 1.0, CosBound, 1.0)
+    CosMu = array([linspace(-CosBound[i],CosBound[i],2*Ncos,endpoint=False) for i in range(NT)])
+    a = ( Enu + En ) - ( CosMu )**2 * ( Enu + pn )**2
+    b = e - 2. * ( CosMu )**2 * ( Enu + pn )**2
+    c = e**2 / ( ( Enu + En )**2 )
+    d = b**2 - 4. * a * c
     d = nanmax(d)
-
-    T_mu_max = abs(nanmax(1.0/(2.0*a)*(-b+sqrt(d))))
-    T_mu_min = abs(nanmin(1.0/(2.0*a)*(-b-sqrt(d))))
-    DELTA_T_mu = abs(T_mu_max-T_mu_min)/N_T
-    T_mu = linspace(T_mu_min,T_mu_max,N_T,endpoint=False)
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
-    cos_max = E_mu/P_mu - sq(m_mu)/(2.0*E_nu*P_mu)
-    cos_max = where(cos_max < 1.0 ,cos_max,1.0)
-
-    for i in range(len(cos_bound)):
-        cos_max = where(cos_bound > cos_max, cos_bound, cos_max)
-
-    cos_mu = array([linspace(-cos_max[i],cos_max[i],2*N_cos,endpoint=False) for i in range(N_T)])
-    #cos_mu = np.where((-0.24 < cos_mu) & (cos_mu < 0.24) , 0.25, cos_mu)
-
-    DELTA_cos_mu = array([0.0 for i in range(N_T)])
-    for i in range(N_T):
-        DELTA_cos_mu[i] = abs(cos_mu[i][1] - cos_mu[i][0])
-
-    T_mu = broadcast_to(T_mu,(int(2*N_cos/500),N_T))
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = broadcast_to(E_mu,(int(2*N_cos/500),N_T))
-    E_mu = swapaxes(E_mu,0,1)
-    P_mu = broadcast_to(P_mu,(int(2*N_cos/500),N_T))
-    P_mu = swapaxes(P_mu,0,1)
-
-    return T_mu,E_mu,P_mu,E_nu,cos_mu,DELTA_cos_mu,DELTA_T_mu
+    TmuMax = abs( nanmax( 1. / ( 2. * a ) * ( - b + sqrt( d ) ) ) )
+    TmuMin = abs( nanmin( 1. / ( 2. * a ) * ( - b - sqrt( d ) ) ) )
+    DeltaTmu = abs( TmuMax - TmuMin ) / NT
+    Tmu = linspace(TmuMin,TmuMax,NT,endpoint=False)
+    Emu = Tmu + mMu
+    Pmu = sqrt( Emu**2 - mMu**2 )
+    CosMax = Emu / Pmu - mMu**2 / ( 2. * Enu * Pmu )
+    CosMax = where(CosMax < 1.0 ,CosMax,1.0)
+    for i in range(len(CosBound)):
+        CosMax = where(CosBound > CosMax, CosBound, CosMax)
+    CosMu = array([linspace(-CosMax[i],CosMax[i],2*Ncos,endpoint=False) for i in range(NT)])
+    #CosMu = np.where((-0.24 < CosMu) & (CosMu < 0.24) , 0.25, CosMu)
+    DeltaCosMu = array([0.0 for i in range(NT)])
+    for i in range(NT):
+        DeltaCosMu[i] = abs(CosMu[i][1] - CosMu[i][0])
+    Tmu = broadcast_to(Tmu,(int(2*Ncos/500),NT))
+    Tmu = swapaxes(Tmu,0,1)
+    Emu = broadcast_to(Emu,(int(2*Ncos/500),NT))
+    Emu = swapaxes(Emu,0,1)
+    Pmu = broadcast_to(Pmu,(int(2*Ncos/500),NT))
+    Pmu = swapaxes(Pmu,0,1)
+    return Tmu,Emu,Pmu,Enu,CosMu,DeltaCosMu,DeltaTmu
     
 #########################################################################
-## Create a function to make kinematic variables where E_nu is an array##
+## Create a function to make kinematic variables where Enu is an array##
 #########################################################################
-def Variables3D(N_T,N_cos,E_nu):
-    
-    N_E = len(E_nu)
-    E_hi = sqrt(sq(m_N) + sq(p_F))                            # Upper limit of neutron energy integration
-
-    ## constraints on T_mu  ##
-    T_mu_max = E_nu + E_hi - m_mu - m_N
-    T_mu_max = where(T_mu_max > 0.05, T_mu_max, 0.06)
-    T_mu_min = 0.05
-    
-    T_mu = array([linspace(T_mu_min,T_mu_max[k],N_T,endpoint=False) for k in range(N_E)] )
-    T_mu = swapaxes(T_mu,0,1)
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-
+def Variables3D(NT,Ncos,Enu):
+    NE = len(Enu)
+    ## constraints on Tmu  ##
+    TmuMax = Enu + Ehi - mMu - mN
+    TmuMax = where(TmuMax > 0.05, TmuMax, 0.06)
+    TmuMin = 0.05
+    Tmu = array([linspace(TmuMin,TmuMax[k],NT,endpoint=False) for k in range(NE)] )
+    Tmu = swapaxes(Tmu,0,1)
+    Emu = Tmu + mMu
+    Pmu = sqrt( Emu**2 - mMu**2 )
     ## Restrict cos values to those satisfying Q2 > 0 ##
-    cos_max = where(P_mu > 0.,E_mu/P_mu - m_mu**2/(2.0*E_nu*P_mu),0.)
-    cos_max = where(cos_max < 1.0, cos_max, 1.0)
-
-    cos_mu = array([[linspace(0.,cos_max[i,j],2*N_cos,endpoint=False) for j in range(N_E)] for i in range(N_T)])
-    cos_mu = swapaxes(cos_mu,2,1)
-
-    T_mu = array([[[T_mu[i,j] for j in range(N_E)] for k in range(2*N_cos)] for i in range(N_T)])
-    E_mu = T_mu + m_mu
-    P_mu = sqrt(sq(E_mu) - sq(m_mu))
-    
-    p_P = P_mu*cos_mu
-    p_T = P_mu*sqrt(1.-cos_mu**2)
-
-    return T_mu,E_mu,P_mu,cos_mu,p_P,p_T
+    CosMax = where(Pmu > 0.,Emu/Pmu - mMu**2/(2.0*Enu*Pmu),0.)
+    CosMax = where(CosMax < 1.0, CosMax, 1.0)
+    CosMu = array([[linspace(0.,CosMax[i,j],2*Ncos,endpoint=False) for j in range(NE)] for i in range(NT)])
+    CosMu = swapaxes(CosMu,2,1)
+    Tmu = array([[[Tmu[i,j] for j in range(NE)] for k in range(2*Ncos)] for i in range(NT)])
+    Emu = Tmu + mMu
+    Pmu = sqrt( Emu**2 - mMu**2 )
+    pP = Pmu*CosMu
+    pT = Pmu*sqrt(1.-CosMu**2)
+    return Tmu,Emu,Pmu,CosMu,pP,pT
