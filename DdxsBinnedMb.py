@@ -1,9 +1,9 @@
 ## here  we will show the Q^2 binned  plot of the  ddxs ##
 from numpy import sqrt,meshgrid,array,linspace,transpose,amin,amax,zeros,inf,where,nonzero
 import matplotlib.pyplot as plt
-from xs_functions_binned import flux_interpolate_binned_mb
+from XsFunctionsBinned import DdxsBinnedMb
 from numpy.linalg import inv
-from misc_fns import round_sig
+from MiscFns import roundSig
 
 #matplotlib inline
  
