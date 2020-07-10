@@ -3,8 +3,8 @@ import numpy as np
 from math import pi
 from sys import exit
 from scipy.interpolate import interp1d
-from MiscFns import WeightSum3d,RoundSig
-from VariableFns import MakeVariables
+from MiscFns import WeightSum3D,roundSig
+from VariableFns import Variables
 from DataFile import *
 
 np.set_printoptions(precision=3)
@@ -207,13 +207,13 @@ def aElements(Q2,q,w,wEff):
 
     ## fill in the values for some useful coefficients ##
     c = -wEff/q
-    d = -( wEff**2 - q**2 )/( 2*q*m_N )
+    d = -( wEff**2 - q**2 )/( 2*q*mN )
     alpha = 1. - c**2 + d**2
     alpha = np.where( alpha > 0., alpha, 0)
 
-    kappa = 1. - 0.8*exp(-20.*Q2)
+    kappa = 1. - 0.8*np.exp(-20.*Q2)
     kappa = 0.993
-    Elo = np.maximum( kappa * ( Ehi - wEff ), mN*( c*d + sqrt(alpha) ) / ( 1. - c**2 ) )
+    Elo = np.maximum( kappa * ( Ehi - wEff ), mN*( c*d + np.sqrt(alpha) ) / ( 1. - c**2 ) )
     Elo = np.where(Elo < Ehi, Elo, Ehi)
     Elo = np.where(Elo <= eB, Ehi,Elo)
 
@@ -453,7 +453,7 @@ def TotalXsDipole(Enu,MA):
         ################################
         ## Create Kinematic Variables ##
         ################################
-        Tmu, Emu, Pmu, Enu, CosMu, DELTACosMu, DELTATmu = MakeVariables( NT, Ncos, Enu[m] ) 
+        Tmu, Emu, Pmu, Enu, CosMu, DELTACosMu, DELTATmu = Variables( NT, Ncos, Enu[m] ) 
         for l in range(numBins):
             for i in range(NT):
                 for j in range(binSize):

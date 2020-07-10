@@ -6,12 +6,13 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from XsFunctionsDipole import (aElements,FormFactorsDipole,
                                CalcCrossSection,DdxsDipole)
-from MiscFns import WeightSum3d,roundSig
+from MiscFns import WeightSum3D,roundSig
 from VariableFns import Variables,VariablesUnbinned,Variables3D
 from DataFile import *
 
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def DdxsBinnedSmoothMv(N,numFlux,MA,lower,upper):
+def DdxsBinnedSmoothMv(N,MA,lower,upper):
+    numFlux=100
     pP1d  = np.linspace(0.05,20.,N)
     ## Interpolate the flux data ##
     EnuFlux = np.linspace(0.,20.,len(FluxMv))
@@ -59,10 +60,11 @@ def DdxsBinnedSmoothMv(N,numFlux,MA,lower,upper):
     return Q2,DoubleDiff2D,DoubleDiff3D
     
 ## Interpolate the flux function that we are  integrating over to calculate a better ddxs  ##
-def DdxsBinnedSmoothMb(N,numFlux,MA,lower,upper):
+def DdxsBinnedSmoothMb(N,MA,lower,upper):
+    numFlux=200
     CosMu1d  = np.linspace(-1.,1.,N)                           
     ## Interpolate the flux data ##
-    Func = interp1d(EnuFlux,Flux,kind='cubic')
+    Func = interp1d(EnuFluxMb,FluxMb,kind='cubic')
     EnuNew = np.linspace(0.05,3.,numFlux)
     FluxNew = Func(EnuNew)    
     Enu3D = np.broadcast_to(EnuNew,(N,2*N,numFlux))
@@ -82,9 +84,9 @@ def DdxsBinnedSmoothMb(N,numFlux,MA,lower,upper):
     Jac = pT2D/Emu2D/Pmu2D
     CosMu3D,Tmu3D,Enu3D = np.meshgrid(CosMu1d,Tmu2D,EnuNew,indexing='ij')
     Emu3D = Tmu3D + mMu
-    Pmu3D = sqrt(Emu3D**2 - mMu**2)
+    Pmu3D = np.sqrt(Emu3D**2 - mMu**2)
     Q2 = 2.*Enu3D*(Emu3D - Pmu3D*CosMu3D) - mMu**2
-    weight = broadcast_to(weight,(N,2*N,len(FluxNew)))
+    weight = np.broadcast_to(weight,(N,N*len(Tmu1DMb),len(FluxNew)))
     ######################################################
     ## make double diff from fit to total cross section ##
     ######################################################
@@ -115,9 +117,9 @@ def DdxsBinned(Emu,Enu,Pmu,CosMu,MA,lower,upper):
     ## fill in the values for the 3-momentum of the Boson ##
     q = np.sqrt( Q2 + w**2 )
     ## calculate the a elements ##
-    a1,a2,a3,a4,a5,a6,a7 = aElementsmake(Q2,q,w,wEff)
+    a1,a2,a3,a4,a5,a6,a7 = aElements(Q2,q,w,wEff)
     ## calculate the form factors ##
-    F1,F2,FA,FP = DdxsDipole(Q2,MA)
+    F1,F2,FA,FP = FormFactorsDipole(Q2,MA)
     ## Use the Form Factors to Define the H Elements ##
     H1 = 8. * mN**2* FA**2 + 2. * Q2 * ( ( F1 + F2 )**2 + FA**2 )
     H2 = 8. * mN**2 * ( F1**2 + FA**2 ) + 2. * Q2 * F2**2

@@ -1,5 +1,7 @@
 ## misc functions for calculating stuff ##
 import numpy as np
+import matplotlib.pyplot as plt
+from pylab import subplot
 
 
 ###############################################################################
@@ -31,7 +33,7 @@ def CalcChiSq(Theo,Exp,Err):
 ##################################################################################
 ## Create a function that performs a weighted sum over the last axis of 'vector'##
 ##################################################################################
-def WeightSum3d(vector,weight):
+def WeightSum3D(vector,weight):
     a = vector.shape
     x = a[0]
     y = a[1]
@@ -58,3 +60,13 @@ def WeightSum2d(vector,weight):
             Int += weight[j][k] * vector[j][k] 
         output[j] = Int
     return output
+
+
+
+
+
+
+
+
+
+

@@ -36,6 +36,9 @@ FluxMb = np.array([45.4,171,222,267,332,364,389,409,432,448,456,458,455,451,443,
         10.3,8.96,7.87,7,6.3,5.73,5.23,4.82,4.55,4.22,3.99,3.84,3.63,
         3.45,3.33,3.20])*10**(-12)
 
+EnuFluxMb = np.linspace(0,3,len(FluxMb))
+EnuFluxMv = np.linspace(0,20,len(FluxMv))
+
 pT1DLow = np.array([0.,.075,.15,.25,.325,.4,.475,.55,.7,.85,1.,1.25])
 pP1DLow = np.array([1.5,2.,2.5,3.,3.5,4.,4.5,5.,6.,8.,10.,15.])
 
@@ -46,7 +49,7 @@ pT1D = (pT1DLow + pT1DHigh)/2.
 pP1D = (pP1DLow + pP1DHigh)/2.
 
 Tmu1DMb = np.linspace(0.25,1.95,18,endpoint=True)
-Cosmu1DMb = np.linspace(-.95,.95,20,endpoint=True)
+CosMu1DMb = np.linspace(-.95,.95,20,endpoint=True)
 Enu1DMb = np.linspace(0.05, (len(FluxMb))/20.0,len(FluxMb),endpoint=True)
 
 MinibooneXData = np.array([.425,.475,.525,.575,.625,.675,.725,.775,.85,.95,1.05,1.2,1.4,1.75])
