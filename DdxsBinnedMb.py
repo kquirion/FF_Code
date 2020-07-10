@@ -39,7 +39,7 @@ for i in range(len(Q2_bins)-1):
     y_labels.append(r"%s < $Q^2$ < %s GeV$^2$" % (Q2_bins[i],Q2_bins[i+1]))
     Q2,double_diff,double_diff_3D = flux_interpolate_binned_mb((N,num_flux),M_A,Q2_bins[i],Q2_bins[i+1])
     double_diff_p = double_diff*Jac
-    print "bin %s/%s complete" % (i+1,len(Q2_bins)-1) 
+    print ("bin %s/%s complete" % (i+1,len(Q2_bins)-1) )
     for j in  range(N):
         for k in range(len_t):
             y[i,j,k] = double_diff[j,k]
